@@ -1345,18 +1345,13 @@ export default function ModuleDetail() {
 
         const downloadCertificate = async () => {
           try {
-            const token = localStorage.getItem('token');
-            if (!token) { message.error('Please log in again'); return; }
             message.loading({ content: 'Preparing certificate...', key: 'cert-dl' });
-            const res = await fetch('/api/certificate/download', {
-              headers: { Authorization: `Bearer ${token}`, Accept: 'application/pdf' },
+            const res = await api.get('/certificate/download', {
+              responseType: 'blob',
+              headers: { Accept: 'application/pdf' },
+              transformResponse: [(data: any) => data],
             });
-            if (!res.ok) {
-              const errText = await res.text().catch(() => '');
-              console.error('Certificate download failed:', res.status, errText);
-              throw new Error(`HTTP ${res.status}: ${errText.substring(0, 100)}`);
-            }
-            const blob = await res.blob();
+            const blob = new Blob([res.data], { type: 'application/pdf' });
             if (blob.size < 100) throw new Error('Empty PDF');
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1366,8 +1361,8 @@ export default function ModuleDetail() {
             document.body.appendChild(a);
             a.click();
             a.remove();
-            window.URL.revokeObjectURL(url);
-            message.success({ content: 'Certificate downloaded! You can now share it.', key: 'cert-dl', duration: 3 });
+            setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+            message.success({ content: 'Certificate downloaded!', key: 'cert-dl', duration: 3 });
           } catch (e: any) {
             message.error({ content: 'Failed to download certificate: ' + (e.message || ''), key: 'cert-dl' });
           }
