@@ -19,7 +19,7 @@ class RegisterController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:lms_users',
             'password' => 'required|string|min:6|confirmed',
-            'role' => 'nullable|in:CASHIER,CLIENT',
+            'role' => 'nullable|string|max:20',
             'mobile' => 'nullable|string|max:20',
             'merchant_name_entered' => 'nullable|string|max:255',
             'outlet_name_entered' => 'nullable|string|max:255',
@@ -27,11 +27,15 @@ class RegisterController extends Controller
             'designation' => 'nullable|string|max:255',
         ]);
 
+        $allowedRoles = ['CASHIER', 'CLIENT'];
+        $role = strtoupper($validated['role'] ?? 'CASHIER');
+        $role = in_array($role, $allowedRoles) ? $role : 'CASHIER';
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role'] ?? 'CASHIER',
+            'role' => $role,
             'mobile' => $validated['mobile'] ?? null,
             'merchant_name_entered' => $validated['merchant_name_entered'] ?? null,
             'outlet_name_entered' => $validated['outlet_name_entered'] ?? null,

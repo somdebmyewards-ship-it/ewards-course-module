@@ -57,9 +57,6 @@ export default function Register() {
           <Form.Item name="designation">
             <Input prefix={<IdcardOutlined />} placeholder="Your role in eWards (optional)" />
           </Form.Item>
-          <Form.Item name="role" initialValue="CASHIER" hidden>
-            <Input type="hidden" />
-          </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block loading={loading} style={{ height: 44, borderRadius: 8, background: '#6B2FA0' }}>
               Create Account
