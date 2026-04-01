@@ -818,8 +818,8 @@ export default function ModuleDetail() {
                   <div style={{ padding: '22px 32px 28px' }}>
                     {/* 1. Section Video (always first) */}
                     {currentSection.video_url && (
-                      <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                        <video controls style={{ width: '100%', display: 'block', maxHeight: 360 }} src={currentSection.video_url} />
+                      <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', background: '#000' }}>
+                        <video controls style={{ width: '100%', display: 'block', maxHeight: 420, objectFit: 'contain' }} src={currentSection.video_url} />
                       </div>
                     )}
 
