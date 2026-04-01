@@ -142,14 +142,9 @@ export default function CertificatePage() {
                         onClick={async () => {
                           if (!cert.download_url) return;
                           try {
-                            const token = localStorage.getItem('token');
-                            const baseURL = import.meta.env.VITE_API_URL || '/api';
                             const path = cert.download_url.replace(/^\/api/, '');
-                            const res = await fetch(`${baseURL}${path}`, {
-                              headers: { Authorization: `Bearer ${token}`, Accept: 'application/pdf' },
-                            });
-                            if (!res.ok) throw new Error('Download failed');
-                            const blob = await res.blob();
+                            const res = await api.get(path, { responseType: 'blob', headers: { Accept: 'application/pdf' } });
+                            const blob = new Blob([res.data], { type: 'application/pdf' });
                             const url = window.URL.createObjectURL(blob);
                             const a = document.createElement('a');
                             a.href = url;
