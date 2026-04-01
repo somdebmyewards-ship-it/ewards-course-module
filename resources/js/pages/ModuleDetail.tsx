@@ -47,7 +47,23 @@ const VideoPlayer = ({ url, style }: { url: string; style?: React.CSSProperties 
   // Direct video file (mp4, webm, etc.)
   const isDirectVideo = /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url);
   if (isDirectVideo) {
-    return <video controls style={{ width: '100%', display: 'block' }} src={url} />;
+    return (
+      <video
+        controls
+        style={{ width: '100%', display: 'block' }}
+        src={url}
+        onError={(e) => {
+          const parent = (e.target as HTMLElement).parentElement;
+          if (parent) {
+            parent.innerHTML = '<div style="padding:40px;text-align:center;color:#999;background:#1a1a1a">'
+              + '<div style="font-size:48px;margin-bottom:12px">&#9658;</div>'
+              + '<div style="font-size:14px">Video unavailable — file may have been removed after deploy.</div>'
+              + '<div style="font-size:12px;margin-top:8px;color:#666">Re-upload the video or use a YouTube/Google Drive link in Content Manager.</div>'
+              + '</div>';
+          }
+        }}
+      />
+    );
   }
 
   // Unknown URL — try iframe as fallback (works for most embeddable video services)
