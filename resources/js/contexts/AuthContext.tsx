@@ -31,6 +31,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Warm up the backend on every page load (prevents Render cold start)
+    fetch((import.meta.env.VITE_API_URL || '/api') + '/health').catch(() => {});
+
     if (token) {
       api.get('/me').then(r => {
         const userData = r.data;
