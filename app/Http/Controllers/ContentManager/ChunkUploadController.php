@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Media;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ChunkUploadController extends Controller
 {
@@ -25,7 +26,6 @@ class ChunkUploadController extends Controller
         $uploadId = preg_replace('/[^a-zA-Z0-9_\-]/', '', $request->input('upload_id'));
         $index    = (int) $request->input('chunk_index');
 
-        // Store chunk via Laravel so it works on any disk/OS
         $chunkPath = "chunks/{$uploadId}/chunk_{$index}";
         Storage::disk('local')->put($chunkPath, file_get_contents($request->file('chunk')->getRealPath()));
 
@@ -54,13 +54,17 @@ class ChunkUploadController extends Controller
             }
         }
 
-        // Build final file path
         $ext       = strtolower(pathinfo($filename, PATHINFO_EXTENSION)) ?: 'mp4';
         $finalName = uniqid('vid_', true) . '.' . $ext;
-        $finalPath = 'uploads/' . $finalName;          // relative to public disk
-        $disk      = config('filesystems.default', 'public');
 
-        // Merge chunks into a temp file first, then push to the target disk
+        // B4: Validate allowed file types
+        $allowedTypes = config('lms.upload_allowed_types', ['mp4','webm','mov','avi','pdf','png','jpg','jpeg','gif']);
+        if (!in_array($ext, $allowedTypes)) {
+            Storage::disk('local')->deleteDirectory("chunks/{$uploadId}");
+            return response()->json(['message' => "File type .{$ext} is not allowed."], 422);
+        }
+
+        // Merge chunks into a temp file
         $tmpPath = storage_path('app/chunks/' . $uploadId . '/merged.' . $ext);
         $out = fopen($tmpPath, 'wb');
         for ($i = 0; $i < $totalChunks; $i++) {
@@ -69,24 +73,30 @@ class ChunkUploadController extends Controller
         }
         fclose($out);
 
-        // Move merged file to target disk
-        if ($disk === 's3') {
-            Storage::disk('s3')->put($finalPath, fopen($tmpPath, 'rb'));
-            $url = Storage::disk('s3')->url($finalPath);
-        } else {
-            Storage::disk('public')->put($finalPath, fopen($tmpPath, 'rb'));
-            $url = rtrim(config('app.url'), '/') . '/storage/' . $finalPath;
-        }
-
         $fileSize = filesize($tmpPath);
         $mimeType = mime_content_type($tmpPath) ?: 'video/mp4';
 
-        // B4: Validate allowed file types
-        $allowedTypes = config('lms.upload_allowed_types', ['mp4','webm','mov','avi','pdf','png','jpg','jpeg','gif']);
-        if (!in_array($ext, $allowedTypes)) {
-            @unlink($tmpPath);
-            Storage::disk('local')->deleteDirectory("chunks/{$uploadId}");
-            return response()->json(['message' => "File type .{$ext} is not allowed."], 422);
+        // Upload to Cloudinary if configured, otherwise fall back to local/s3
+        if (env('CLOUDINARY_URL')) {
+            $resourceType = str_starts_with($mimeType, 'video/') ? 'video' : 'auto';
+            $result = Cloudinary::upload($tmpPath, [
+                'resource_type' => $resourceType,
+                'folder'        => 'ewards-lms',
+                'public_id'     => pathinfo($finalName, PATHINFO_FILENAME),
+            ]);
+            $url  = $result->getSecurePath();
+            $disk = 'cloudinary';
+            $finalPath = $result->getPublicId();
+        } else {
+            $finalPath = 'uploads/' . $finalName;
+            $disk = config('filesystems.default', 'public');
+            if ($disk === 's3') {
+                Storage::disk('s3')->put($finalPath, fopen($tmpPath, 'rb'));
+                $url = Storage::disk('s3')->url($finalPath);
+            } else {
+                Storage::disk('public')->put($finalPath, fopen($tmpPath, 'rb'));
+                $url = rtrim(config('app.url'), '/') . '/storage/' . $finalPath;
+            }
         }
 
         // Clean up temp chunks and merged temp file
