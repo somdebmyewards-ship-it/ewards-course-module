@@ -141,31 +141,10 @@ export default function CertificatePage() {
                         style={{ background: config.color, borderColor: config.color, borderRadius: 8 }}
                         onClick={() => {
                           if (!cert.download_url) return;
-                          const path = cert.download_url.replace(/^\/api/, '');
                           const baseURL = import.meta.env.VITE_API_URL || '/api';
                           const token = localStorage.getItem('token');
-                          const xhr = new XMLHttpRequest();
-                          xhr.open('GET', `${baseURL}${path}`, true);
-                          xhr.responseType = 'arraybuffer';
-                          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-                          xhr.onload = () => {
-                            if (xhr.status === 200) {
-                              const blob = new Blob([xhr.response], { type: 'application/pdf' });
-                              const url = window.URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = `eWards-Certificate-${userName?.replace(/[^a-zA-Z0-9-]/g, '-') || 'user'}.pdf`;
-                              document.body.appendChild(a);
-                              a.click();
-                              a.remove();
-                              window.URL.revokeObjectURL(url);
-                              message.success('Certificate downloaded!');
-                            } else {
-                              message.error('Failed to download certificate');
-                            }
-                          };
-                          xhr.onerror = () => message.error('Failed to download certificate');
-                          xhr.send();
+                          const certParam = cert.id ? `&id=${cert.id}` : '';
+                          window.open(`${baseURL}/certificate/download-direct?token=${token}${certParam}`, '_blank');
                         }}
                       >
                         Download

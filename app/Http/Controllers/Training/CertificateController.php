@@ -8,6 +8,7 @@ use App\Models\TrainingProgress;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class CertificateController extends Controller
 {
@@ -176,5 +177,63 @@ class CertificateController extends Controller
             ->header('Content-Disposition', 'attachment; filename="eWards-Certificate-' . $safeName . '.pdf"')
             ->header('Content-Length', strlen($pdfContent))
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+
+    /**
+     * Direct browser download — authenticates via token query param.
+     * This avoids all CORS/XHR issues by letting the browser navigate directly.
+     */
+    public function downloadDirect(Request $request)
+    {
+        $token = $request->query('token');
+        $certId = $request->query('id');
+
+        if (!$token) {
+            return response()->json(['message' => 'Token required'], 401);
+        }
+
+        $accessToken = PersonalAccessToken::findToken($token);
+        if (!$accessToken) {
+            return response()->json(['message' => 'Invalid token'], 401);
+        }
+
+        $user = $accessToken->tokenable;
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 401);
+        }
+
+        $this->autoIssueCertificates($user->id, $user);
+
+        $query = Certificate::where('user_id', $user->id);
+        if ($certId) {
+            $query->where('id', $certId);
+        }
+        $cert = $query->orderByRaw("FIELD(certificate_type,'path','expert','module')")->first();
+
+        if (!$cert) {
+            return response('No certificate available. Complete modules first.', 404);
+        }
+
+        $completedModules = TrainingProgress::where('user_id', $user->id)
+            ->where('module_completed', true)
+            ->with('module:id,title')
+            ->get()
+            ->pluck('module.title');
+
+        $data = [
+            'user_name' => $user->name,
+            'issued_at' => $cert->issued_at->format('F j, Y'),
+            'certificate_id' => $cert->certificate_code ?? 'EWCERT-' . str_pad($cert->id, 6, '0', STR_PAD_LEFT),
+            'certificate_type' => $cert->certificate_type,
+            'completed_modules' => $completedModules,
+            'total_points' => $user->points,
+        ];
+
+        $pdf = Pdf::loadView('certificates.template', $data)
+            ->setPaper('a4', 'landscape');
+
+        $safeName = preg_replace('/[^a-zA-Z0-9\-]/', '-', $user->name);
+
+        return $pdf->download('eWards-Certificate-' . $safeName . '.pdf');
     }
 }
