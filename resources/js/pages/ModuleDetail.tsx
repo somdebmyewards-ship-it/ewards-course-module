@@ -9,40 +9,49 @@ import api, { downloadPdf } from '@/lib/api';
 
 const isIconUrl = (icon?: string) => icon && (icon.startsWith('http') || icon.startsWith('/storage') || icon.startsWith('data:'));
 
-/** Detects YouTube/Vimeo URLs and renders iframe embed; falls back to <video> for direct files */
+/** Detects YouTube/Vimeo/Drive/Loom URLs and renders iframe embed; falls back to <video> for direct files */
 const VideoPlayer = ({ url, style }: { url: string; style?: React.CSSProperties }) => {
-  // YouTube: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID
-  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  if (ytMatch) {
-    return (
-      <div style={{ position: 'relative', paddingTop: '56.25%', ...style }}>
-        <iframe
-          src={`https://www.youtube.com/embed/${ytMatch[1]}?rel=0`}
-          title="Video"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-        />
-      </div>
-    );
-  }
+  const iframeWrapper = (embedSrc: string) => (
+    <div style={{ position: 'relative', paddingTop: '56.25%', ...style }}>
+      <iframe
+        src={embedSrc}
+        title="Video"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        allowFullScreen
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+      />
+    </div>
+  );
+
+  // YouTube: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID, youtube.com/shorts/ID
+  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) return iframeWrapper(`https://www.youtube.com/embed/${ytMatch[1]}?rel=0`);
+
   // Vimeo: vimeo.com/ID, player.vimeo.com/video/ID
   const vimeoMatch = url.match(/(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/);
-  if (vimeoMatch) {
-    return (
-      <div style={{ position: 'relative', paddingTop: '56.25%', ...style }}>
-        <iframe
-          src={`https://player.vimeo.com/video/${vimeoMatch[1]}`}
-          title="Video"
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowFullScreen
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-        />
-      </div>
-    );
+  if (vimeoMatch) return iframeWrapper(`https://player.vimeo.com/video/${vimeoMatch[1]}`);
+
+  // Google Drive: drive.google.com/file/d/ID/...
+  const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (driveMatch) return iframeWrapper(`https://drive.google.com/file/d/${driveMatch[1]}/preview`);
+
+  // Loom: loom.com/share/ID
+  const loomMatch = url.match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
+  if (loomMatch) return iframeWrapper(`https://www.loom.com/embed/${loomMatch[1]}`);
+
+  // Any URL containing "youtube", "vimeo", "drive.google", "loom" that didn't match above — try iframe
+  if (/youtube|youtu\.be|vimeo|drive\.google|loom\.com|embed|iframe/i.test(url)) {
+    return iframeWrapper(url);
   }
+
   // Direct video file (mp4, webm, etc.)
-  return <video controls style={{ width: '100%', display: 'block' }} src={url} />;
+  const isDirectVideo = /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url);
+  if (isDirectVideo) {
+    return <video controls style={{ width: '100%', display: 'block' }} src={url} />;
+  }
+
+  // Unknown URL — try iframe as fallback (works for most embeddable video services)
+  return iframeWrapper(url);
 };
 
 const { Title, Text, Paragraph } = Typography;
