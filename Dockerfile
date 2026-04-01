@@ -15,10 +15,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libonig-dev \
     libxml2-dev unzip curl \
   && docker-php-ext-configure gd --with-freetype --with-jpeg \
-  && docker-php-ext-install pdo_mysql mbstring gd zip bcmath xml pcntl \
+  && docker-php-ext-install pdo_mysql mbstring gd zip bcmath xml pcntl opcache \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
+
+# OPcache + PHP production config
+COPY php-prod.ini /usr/local/etc/php/conf.d/99-prod.ini
 
 # Copy app code
 COPY . .

@@ -36,6 +36,9 @@ use App\Http\Controllers\ContentManager\MediaUploadController;
 use App\Http\Controllers\ContentManager\ChunkUploadController;
 use App\Http\Controllers\Training\ChatbotController;
 
+// Health check (keep-alive for Render free tier)
+Route::get('health', fn () => response()->json(['status' => 'ok', 'ts' => now()->toISOString()]));
+
 // Public auth routes
 Route::prefix('auth')->group(function () {
     Route::post('register', [RegisterController::class, 'store']);
