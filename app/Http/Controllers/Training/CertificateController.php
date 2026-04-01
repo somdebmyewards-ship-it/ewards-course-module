@@ -237,9 +237,9 @@ class CertificateController extends Controller
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', 'attachment; filename="eWards-Certificate-' . $safeName . '.pdf"')
                 ->header('Content-Length', strlen($pdfContent));
-        } catch (\Exception $e) {
-            Log::error('Certificate direct download error: ' . $e->getMessage());
-            return response('Error generating certificate: ' . $e->getMessage(), 500);
+        } catch (\Throwable $e) {
+            Log::error('Certificate direct download error: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            return response('Error: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine(), 500, ['Content-Type' => 'text/plain']);
         }
     }
 }
