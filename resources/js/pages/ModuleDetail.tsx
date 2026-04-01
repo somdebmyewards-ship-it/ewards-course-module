@@ -9,6 +9,42 @@ import api, { downloadPdf } from '@/lib/api';
 
 const isIconUrl = (icon?: string) => icon && (icon.startsWith('http') || icon.startsWith('/storage') || icon.startsWith('data:'));
 
+/** Detects YouTube/Vimeo URLs and renders iframe embed; falls back to <video> for direct files */
+const VideoPlayer = ({ url, style }: { url: string; style?: React.CSSProperties }) => {
+  // YouTube: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID
+  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) {
+    return (
+      <div style={{ position: 'relative', paddingTop: '56.25%', ...style }}>
+        <iframe
+          src={`https://www.youtube.com/embed/${ytMatch[1]}?rel=0`}
+          title="Video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+        />
+      </div>
+    );
+  }
+  // Vimeo: vimeo.com/ID, player.vimeo.com/video/ID
+  const vimeoMatch = url.match(/(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/);
+  if (vimeoMatch) {
+    return (
+      <div style={{ position: 'relative', paddingTop: '56.25%', ...style }}>
+        <iframe
+          src={`https://player.vimeo.com/video/${vimeoMatch[1]}`}
+          title="Video"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+        />
+      </div>
+    );
+  }
+  // Direct video file (mp4, webm, etc.)
+  return <video controls style={{ width: '100%', display: 'block' }} src={url} />;
+};
+
 const { Title, Text, Paragraph } = Typography;
 const { Sider, Content } = Layout;
 
@@ -718,8 +754,8 @@ export default function ModuleDetail() {
                     <PlayCircleOutlined style={{ color: '#6B2FA0', fontSize: 18 }} />
                     <span style={{ fontSize: 16, fontWeight: 700, color: '#1a0933' }}>Introductory Video</span>
                   </div>
-                  <div style={{ position: 'relative', background: '#000', overflow: 'hidden' }}>
-                    <video controls style={{ width: '100%', display: 'block' }} src={mod.video_url} />
+                  <div style={{ position: 'relative', background: '#000', overflow: 'hidden', borderRadius: 0 }}>
+                    <VideoPlayer url={mod.video_url} />
                   </div>
                   {/* Images + Documents if any */}
                   {((mod.image_urls && JSON.parse(mod.image_urls || '[]').length > 0) || (mod.document_urls && JSON.parse(mod.document_urls || '[]').length > 0)) && (
@@ -819,7 +855,7 @@ export default function ModuleDetail() {
                     {/* 1. Section Video (always first) */}
                     {currentSection.video_url && (
                       <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', background: '#000' }}>
-                        <video controls style={{ width: '100%', display: 'block' }} src={currentSection.video_url} />
+                        <VideoPlayer url={currentSection.video_url} />
                       </div>
                     )}
 
