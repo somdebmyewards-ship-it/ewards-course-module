@@ -50,4 +50,41 @@ export const clearCache = (pattern?: string) => {
   }
 };
 
+/**
+ * Download a PDF from the API. Uses raw fetch to avoid axios blob corruption.
+ */
+export const downloadPdf = async (apiPath: string, filename: string) => {
+  const baseURL = import.meta.env.VITE_API_URL || '/api';
+  const token = localStorage.getItem('token');
+  const url = `${baseURL}${apiPath.startsWith('/') ? apiPath : '/' + apiPath}`;
+
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/pdf',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Download failed: HTTP ${res.status}`);
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+
+  if (blob.size < 500) {
+    throw new Error('File too small — server may have returned an error');
+  }
+
+  const blobUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
+};
+
 export default api;

@@ -5,7 +5,7 @@ import { CheckCircleOutlined, TrophyOutlined, BookOutlined, StarOutlined, StarFi
 import AssistantDrawer from '@/components/AssistantDrawer';
 import { assistantApi, AssistantStatus } from '@/lib/assistantApi';
 import { useAuth } from '@/contexts/AuthContext';
-import api from '@/lib/api';
+import api, { downloadPdf } from '@/lib/api';
 
 const isIconUrl = (icon?: string) => icon && (icon.startsWith('http') || icon.startsWith('/storage') || icon.startsWith('data:'));
 
@@ -1346,22 +1346,8 @@ export default function ModuleDetail() {
         const downloadCertificate = async () => {
           try {
             message.loading({ content: 'Preparing certificate...', key: 'cert-dl' });
-            const res = await api.get('/certificate/download', {
-              responseType: 'blob',
-              headers: { Accept: 'application/pdf' },
-              transformResponse: [(data: any) => data],
-            });
-            const blob = new Blob([res.data], { type: 'application/pdf' });
-            if (blob.size < 100) throw new Error('Empty PDF');
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
             const safeName = (user?.name || 'User').replace(/[^a-zA-Z0-9-]/g, '-');
-            a.download = `eWards-Certificate-${safeName}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+            await downloadPdf('/certificate/download', `eWards-Certificate-${safeName}.pdf`);
             message.success({ content: 'Certificate downloaded!', key: 'cert-dl', duration: 3 });
           } catch (e: any) {
             message.error({ content: 'Failed to download certificate: ' + (e.message || ''), key: 'cert-dl' });

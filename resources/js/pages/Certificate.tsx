@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, Typography, Button, Result, Spin, Row, Col, Tag, Empty, message } from 'antd';
 import { useAuth } from '@/contexts/AuthContext';
 import { TrophyOutlined, DownloadOutlined, LockOutlined, SafetyCertificateOutlined, StarOutlined, CrownOutlined } from '@ant-design/icons';
-import api from '@/lib/api';
+import api, { downloadPdf } from '@/lib/api';
 
 const { Title, Text } = Typography;
 
@@ -143,20 +143,8 @@ export default function CertificatePage() {
                           if (!cert.download_url) return;
                           try {
                             const path = cert.download_url.replace(/^\/api/, '');
-                            const res = await api.get(path, {
-                              responseType: 'blob',
-                              headers: { Accept: 'application/pdf' },
-                              transformResponse: [(data: any) => data],
-                            });
-                            const blob = new Blob([res.data], { type: 'application/pdf' });
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `eWards-Certificate-${userName?.replace(/[^a-zA-Z0-9-]/g, '-') || 'user'}.pdf`;
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
-                            setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+                            const safeName = userName?.replace(/[^a-zA-Z0-9-]/g, '-') || 'user';
+                            await downloadPdf(path, `eWards-Certificate-${safeName}.pdf`);
                             message.success('Certificate downloaded!');
                           } catch (e: any) {
                             console.error('Certificate download error:', e);
