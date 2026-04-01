@@ -42,8 +42,6 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [LoginController::class, 'store']);
 });
 
-// Token-in-query certificate download (bypasses CORS for browser downloads)
-Route::get('certificate/download-direct', [CertificateController::class, 'downloadDirect']);
 
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {

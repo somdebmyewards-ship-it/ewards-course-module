@@ -139,12 +139,29 @@ export default function CertificatePage() {
                         type="primary"
                         icon={<DownloadOutlined />}
                         style={{ background: config.color, borderColor: config.color, borderRadius: 8 }}
-                        onClick={() => {
+                        onClick={async () => {
                           if (!cert.download_url) return;
-                          const baseURL = import.meta.env.VITE_API_URL || '/api';
-                          const token = localStorage.getItem('token');
-                          const certParam = cert.id ? `&id=${cert.id}` : '';
-                          window.open(`${baseURL}/certificate/download-direct?token=${token}${certParam}`, '_blank');
+                          try {
+                            const path = cert.download_url.replace(/^\/api/, '');
+                            const res = await api.get(path, {
+                              responseType: 'blob',
+                              headers: { Accept: 'application/pdf' },
+                              transformResponse: [(data: any) => data],
+                            });
+                            const blob = new Blob([res.data], { type: 'application/pdf' });
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `eWards-Certificate-${userName?.replace(/[^a-zA-Z0-9-]/g, '-') || 'user'}.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+                            message.success('Certificate downloaded!');
+                          } catch (e: any) {
+                            console.error('Certificate download error:', e);
+                            message.error('Failed to download certificate');
+                          }
                         }}
                       >
                         Download
