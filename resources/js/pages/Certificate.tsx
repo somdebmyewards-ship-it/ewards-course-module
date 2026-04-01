@@ -143,7 +143,9 @@ export default function CertificatePage() {
                           if (!cert.download_url) return;
                           try {
                             const token = localStorage.getItem('token');
-                            const res = await fetch(`/api${cert.download_url.startsWith('/api') ? cert.download_url.slice(4) : cert.download_url}`, {
+                            const baseURL = import.meta.env.VITE_API_URL || '/api';
+                            const path = cert.download_url.replace(/^\/api/, '');
+                            const res = await fetch(`${baseURL}${path}`, {
                               headers: { Authorization: `Bearer ${token}`, Accept: 'application/pdf' },
                             });
                             if (!res.ok) throw new Error('Download failed');
