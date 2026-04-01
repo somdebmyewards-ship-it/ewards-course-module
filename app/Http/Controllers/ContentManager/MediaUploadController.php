@@ -26,7 +26,7 @@ class MediaUploadController extends Controller
         $path = $file->store('uploads', $disk);
         $url = $disk === 's3'
             ? Storage::disk('s3')->url($path)
-            : '/storage/' . $path;
+            : rtrim(config('app.url'), '/') . '/storage/' . $path;
 
         $media = Media::create([
             'filename' => basename($path),

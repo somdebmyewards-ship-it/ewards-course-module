@@ -75,7 +75,7 @@ class ChunkUploadController extends Controller
             $url = Storage::disk('s3')->url($finalPath);
         } else {
             Storage::disk('public')->put($finalPath, fopen($tmpPath, 'rb'));
-            $url = '/storage/' . $finalPath;
+            $url = rtrim(config('app.url'), '/') . '/storage/' . $finalPath;
         }
 
         $fileSize = filesize($tmpPath);
