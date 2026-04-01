@@ -10,7 +10,11 @@ import api, { downloadPdf } from '@/lib/api';
 const isIconUrl = (icon?: string) => icon && (icon.startsWith('http') || icon.startsWith('/storage') || icon.startsWith('data:'));
 
 /** Detects YouTube/Vimeo/Drive/Loom URLs and renders iframe embed; falls back to <video> for direct files */
-const VideoPlayer = ({ url, style }: { url: string; style?: React.CSSProperties }) => {
+const VideoPlayer = ({ url: rawUrl, style }: { url: string; style?: React.CSSProperties }) => {
+  // Fix relative /storage/ paths — prepend backend URL so they load from Render, not Vercel
+  const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/api\/?$/, '');
+  const url = rawUrl.startsWith('/storage/') && apiBase ? `${apiBase}${rawUrl}` : rawUrl;
+
   const iframeWrapper = (embedSrc: string) => (
     <div style={{ position: 'relative', paddingTop: '56.25%', ...style }}>
       <iframe
