@@ -57,7 +57,7 @@ export default function Register() {
           <Form.Item name="designation">
             <Input prefix={<IdcardOutlined />} placeholder="Your role in eWards (optional)" />
           </Form.Item>
-          <Form.Item name="role" initialValue="USER" hidden>
+          <Form.Item name="role" initialValue="CASHIER" hidden>
             <Input type="hidden" />
           </Form.Item>
           <Form.Item>
