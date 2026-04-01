@@ -29,15 +29,17 @@ services:
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
-        sync: false
+        value: gateway01.us-east-1.prod.aws.tidbcloud.com
       - key: DB_PORT
-        value: "3306"
+        value: "4000"
       - key: DB_DATABASE
-        sync: false
+        value: ewards_lms
       - key: DB_USERNAME
         sync: false
       - key: DB_PASSWORD
         sync: false
+      - key: MYSQL_ATTR_SSL_CA
+        value: /etc/ssl/certs/ca-certificates.crt
       - key: CACHE_DRIVER
         value: file
       - key: QUEUE_CONNECTION
@@ -47,6 +49,6 @@ services:
       - key: FILESYSTEM_DISK
         value: public
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: https://ewards-learning-hub.vercel.app
       - key: SANCTUM_TOKEN_EXPIRATION
         value: "480"
