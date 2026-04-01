@@ -14,7 +14,7 @@ const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
 
 const roleDisplayName = (role?: string) => {
-  const map: Record<string, string> = { ADMIN: 'Admin', TRAINER: 'Trainer', CASHIER: 'User', CLIENT: 'Client' };
+  const map: Record<string, string> = { ADMIN: 'Admin', TRAINER: 'Trainer', CASHIER: 'User', CLIENT: 'User' };
   return map[role || ''] || role || 'User';
 };
 
