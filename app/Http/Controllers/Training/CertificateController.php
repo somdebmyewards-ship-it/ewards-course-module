@@ -8,7 +8,6 @@ use App\Models\TrainingProgress;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
-use App\Models\User;
 
 class CertificateController extends Controller
 {
@@ -179,67 +178,4 @@ class CertificateController extends Controller
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
 
-    /**
-     * Direct browser download — authenticates via token query param.
-     * This avoids all CORS/XHR issues by letting the browser navigate directly.
-     */
-    public function downloadDirect(Request $request)
-    {
-        try {
-            $token = $request->query('token');
-            $certId = $request->query('id');
-
-            if (!$token) {
-                return response('Token required', 401);
-            }
-
-            // Authenticate: set the token as Bearer and resolve user via Sanctum
-            $request->headers->set('Authorization', 'Bearer ' . $token);
-            $user = auth('sanctum')->user();
-            if (!$user) {
-                return response('Invalid token', 401);
-            }
-
-            $this->autoIssueCertificates($user->id, $user);
-
-            $query = Certificate::where('user_id', $user->id);
-            if ($certId) {
-                $query->where('id', $certId);
-            }
-            $cert = $query->latest('issued_at')->first();
-
-            if (!$cert) {
-                return response('No certificate available. Complete modules first.', 404);
-            }
-
-            $completedModules = TrainingProgress::where('user_id', $user->id)
-                ->where('module_completed', true)
-                ->with('module:id,title')
-                ->get()
-                ->pluck('module.title');
-
-            $data = [
-                'user_name' => $user->name,
-                'issued_at' => $cert->issued_at->format('F j, Y'),
-                'certificate_id' => $cert->certificate_code ?? 'EWCERT-' . str_pad($cert->id, 6, '0', STR_PAD_LEFT),
-                'certificate_type' => $cert->certificate_type,
-                'completed_modules' => $completedModules,
-                'total_points' => $user->points ?? 0,
-            ];
-
-            $pdf = Pdf::loadView('certificates.template', $data)
-                ->setPaper('a4', 'landscape');
-
-            $safeName = preg_replace('/[^a-zA-Z0-9\-]/', '-', $user->name);
-            $pdfContent = $pdf->output();
-
-            return response($pdfContent, 200)
-                ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'attachment; filename="eWards-Certificate-' . $safeName . '.pdf"')
-                ->header('Content-Length', strlen($pdfContent));
-        } catch (\Throwable $e) {
-            Log::error('Certificate direct download error: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
-            return response('Error: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine(), 500, ['Content-Type' => 'text/plain']);
-        }
-    }
 }
