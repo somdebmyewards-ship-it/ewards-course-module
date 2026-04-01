@@ -13,6 +13,11 @@ import ChatWidget from '@/components/ChatWidget';
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
 
+const roleDisplayName = (role?: string) => {
+  const map: Record<string, string> = { ADMIN: 'Admin', TRAINER: 'Trainer', CASHIER: 'User', CLIENT: 'Client' };
+  return map[role || ''] || role || 'User';
+};
+
 const LOGO_URL = 'https://ewardsdata.s3.ap-south-1.amazonaws.com/ewards_website/eWards+logo+-+purple+(1).png';
 
 export default function AppLayout() {
@@ -85,7 +90,7 @@ export default function AppLayout() {
 
   const userMenu = {
     items: [
-      { key: 'role', label: user?.role, disabled: true },
+      { key: 'role', label: roleDisplayName(user?.role), disabled: true },
       { type: 'divider' as const },
       { key: 'logout', label: 'Logout', icon: <LogoutOutlined />, danger: true },
     ],
@@ -205,7 +210,7 @@ export default function AppLayout() {
                   fontSize: 13, fontWeight: 700, color: '#1a1a2e',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{user?.name}</div>
-                <div style={{ fontSize: 11, color: '#9B59B6', fontWeight: 500 }}>{user?.role}</div>
+                <div style={{ fontSize: 11, color: '#9B59B6', fontWeight: 500 }}>{roleDisplayName(user?.role)}</div>
               </div>
               <LogoutOutlined style={{ fontSize: 13, color: '#c7a8e8' }} />
             </div>
