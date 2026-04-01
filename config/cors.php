@@ -7,11 +7,9 @@ return [
     | Cross-Origin Resource Sharing (CORS) Configuration
     |--------------------------------------------------------------------------
     |
-    | Here you may configure your settings for cross-origin resource sharing
-    | or "CORS". This determines what cross-origin operations may execute
-    | in web browsers. You are free to adjust these settings as needed.
-    |
-    | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+    | In production, set CORS_ALLOWED_ORIGINS to your Vercel frontend URL.
+    | Example: CORS_ALLOWED_ORIGINS=https://your-app.vercel.app
+    | Multiple origins: CORS_ALLOWED_ORIGINS=https://app.vercel.app,https://custom-domain.com
     |
     */
 
@@ -19,7 +17,9 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => array_filter(
+        explode(',', env('CORS_ALLOWED_ORIGINS', '*'))
+    ),
 
     'allowed_origins_patterns' => [],
 

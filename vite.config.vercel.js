@@ -4,12 +4,14 @@ import path from 'path';
 
 /**
  * Standalone Vite config for Vercel deployment (SPA mode).
+ * Builds the React frontend independently of Laravel.
+ *
  * Usage: npx vite build --config vite.config.vercel.js
  */
 export default defineConfig({
     plugins: [react()],
     root: '.',
-    publicDir: 'public',
+    publicDir: false, // Don't copy Laravel's public/ folder
     resolve: {
         alias: { '@': path.resolve(__dirname, 'resources/js') },
     },
@@ -21,5 +23,9 @@ export default defineConfig({
         rollupOptions: {
             input: 'index.html',
         },
+    },
+    define: {
+        // Ensure import.meta.env works in production
+        'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || '/api'),
     },
 });
