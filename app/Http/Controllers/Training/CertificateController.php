@@ -8,7 +8,7 @@ use App\Models\TrainingProgress;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
-use Laravel\Sanctum\PersonalAccessToken;
+use App\Models\User;
 
 class CertificateController extends Controller
 {
@@ -193,14 +193,11 @@ class CertificateController extends Controller
                 return response('Token required', 401);
             }
 
-            $accessToken = PersonalAccessToken::findToken($token);
-            if (!$accessToken) {
-                return response('Invalid token', 401);
-            }
-
-            $user = $accessToken->tokenable;
+            // Authenticate: set the token as Bearer and resolve user via Sanctum
+            $request->headers->set('Authorization', 'Bearer ' . $token);
+            $user = auth('sanctum')->user();
             if (!$user) {
-                return response('User not found', 401);
+                return response('Invalid token', 401);
             }
 
             $this->autoIssueCertificates($user->id, $user);
