@@ -718,8 +718,8 @@ export default function ModuleDetail() {
                     <PlayCircleOutlined style={{ color: '#6B2FA0', fontSize: 18 }} />
                     <span style={{ fontSize: 16, fontWeight: 700, color: '#1a0933' }}>Introductory Video</span>
                   </div>
-                  <div style={{ position: 'relative', background: '#000', overflow: 'hidden', paddingTop: '56.25%' }}>
-                    <video controls style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }} src={mod.video_url} />
+                  <div style={{ position: 'relative', background: '#000', overflow: 'hidden' }}>
+                    <video controls style={{ width: '100%', display: 'block' }} src={mod.video_url} />
                   </div>
                   {/* Images + Documents if any */}
                   {((mod.image_urls && JSON.parse(mod.image_urls || '[]').length > 0) || (mod.document_urls && JSON.parse(mod.document_urls || '[]').length > 0)) && (
@@ -818,8 +818,8 @@ export default function ModuleDetail() {
                   <div style={{ padding: '22px 32px 28px' }}>
                     {/* 1. Section Video (always first) */}
                     {currentSection.video_url && (
-                      <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', background: '#000', position: 'relative', paddingTop: '56.25%' }}>
-                        <video controls style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }} src={currentSection.video_url} />
+                      <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', background: '#000' }}>
+                        <video controls style={{ width: '100%', display: 'block' }} src={currentSection.video_url} />
                       </div>
                     )}
 
