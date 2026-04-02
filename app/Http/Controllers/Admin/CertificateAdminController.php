@@ -8,6 +8,7 @@ use App\Models\TrainingModule;
 use App\Models\TrainingProgress;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class CertificateAdminController extends Controller
 {
@@ -26,7 +27,7 @@ class CertificateAdminController extends Controller
                 [
                     'issued_at' => now(),
                     'enabled_by_admin' => true,
-                    'certificate_code' => 'EWMOD-' . str_pad($moduleId, 4, '0', STR_PAD_LEFT) . '-' . str_pad($userId, 6, '0', STR_PAD_LEFT),
+                    'certificate_code' => 'EWMOD-' . $moduleId . '-' . $userId . '-' . Str::random(6),
                 ]
             );
         } elseif ($certificateType === 'path') {
@@ -43,7 +44,7 @@ class CertificateAdminController extends Controller
                 [
                     'issued_at' => now(),
                     'enabled_by_admin' => true,
-                    'certificate_code' => 'EWPATH-' . str_pad($userId, 6, '0', STR_PAD_LEFT),
+                    'certificate_code' => 'EWPATH-' . $userId . '-' . Str::random(6),
                 ]
             );
         } elseif ($certificateType === 'expert') {
@@ -57,7 +58,7 @@ class CertificateAdminController extends Controller
                 [
                     'issued_at' => now(),
                     'enabled_by_admin' => true,
-                    'certificate_code' => 'EWEXP-' . str_pad($userId, 6, '0', STR_PAD_LEFT),
+                    'certificate_code' => 'EWEXP-' . $userId . '-' . Str::random(6),
                 ]
             );
         } else {

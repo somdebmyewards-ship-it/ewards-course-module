@@ -16,16 +16,28 @@ class QuizController extends Controller
 
     public function submit(Request $request, int $moduleId)
     {
-        // D5: Validate quiz answers structure
+        // D1: Verify module is published
+        $module = TrainingModule::where('is_published', true)
+            ->with('quizzes')
+            ->findOrFail($moduleId);
+
+        // D5: Validate quiz answers structure and keys are valid quiz IDs for this module
+        $validQuizIds = $module->quizzes->pluck('id')->map(fn($id) => (string) $id)->toArray();
         $request->validate([
             'answers' => 'required|array',
             'answers.*' => 'required|string|max:500',
         ]);
 
-        // D1: Verify module is published
-        $module = TrainingModule::where('is_published', true)
-            ->with('quizzes')
-            ->findOrFail($moduleId);
+        // D5: Reject answer keys that don't belong to this module's quizzes
+        $submittedIds = array_keys($request->answers);
+        $invalidIds = array_diff($submittedIds, $validQuizIds);
+        if (!empty($invalidIds)) {
+            return response()->json([
+                'message' => 'Invalid quiz question IDs submitted.',
+                'errors' => ['answers' => ['Some answer keys do not belong to this module\'s quizzes.']],
+            ], 422);
+        }
+
         $answers = $request->answers;
 
         $totalQuestions = $module->quizzes->count();
