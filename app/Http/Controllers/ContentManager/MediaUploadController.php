@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Media;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Cloudinary\Cloudinary;
 
 class MediaUploadController extends Controller
 {
@@ -26,16 +26,17 @@ class MediaUploadController extends Controller
         $mimeType = $file->getMimeType();
 
         // Upload to Cloudinary if configured
-        if (env('CLOUDINARY_URL')) {
+        if (config('lms.cloudinary_url')) {
+            $cloudinary = new Cloudinary(config('lms.cloudinary_url'));
             $resourceType = str_starts_with($mimeType, 'video/') ? 'video'
                 : (str_starts_with($mimeType, 'image/') ? 'image' : 'auto');
-            $result = Cloudinary::upload($file->getRealPath(), [
+            $result = $cloudinary->uploadApi()->upload($file->getRealPath(), [
                 'resource_type' => $resourceType,
                 'folder'        => 'ewards-lms',
             ]);
-            $url  = $result->getSecurePath();
+            $url  = $result['secure_url'];
             $disk = 'cloudinary';
-            $path = $result->getPublicId();
+            $path = $result['public_id'];
         } else {
             $disk = config('filesystems.default', 'public');
             $path = $file->store('uploads', $disk);
@@ -61,8 +62,9 @@ class MediaUploadController extends Controller
     public function destroy(int $id)
     {
         $media = Media::findOrFail($id);
-        if ($media->disk === 'cloudinary' && env('CLOUDINARY_URL')) {
-            Cloudinary::destroy($media->path);
+        if ($media->disk === 'cloudinary' && config('lms.cloudinary_url')) {
+            $cloudinary = new Cloudinary(config('lms.cloudinary_url'));
+            $cloudinary->uploadApi()->destroy($media->path);
         } else {
             Storage::disk($media->disk)->delete($media->path);
         }

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\TrainingModule;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserManagementController extends Controller
@@ -43,6 +45,11 @@ class UserManagementController extends Controller
             'outlet_id' => 'nullable|exists:lms_outlets,id',
         ]);
 
+        // B5: Only existing ADMINs can create new ADMIN users
+        if ($validated['role'] === 'ADMIN' && !$request->user()->isAdmin()) {
+            return response()->json(['message' => 'Only admins can create admin users'], 403);
+        }
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -53,6 +60,10 @@ class UserManagementController extends Controller
             'approved_by' => $request->user()->id,
             'merchant_id' => $validated['merchant_id'] ?? null,
             'outlet_id' => $validated['outlet_id'] ?? null,
+        ]);
+
+        AuditLog::record('user.create', $request->user()->id, 'user', $user->id, [
+            'role' => $validated['role'],
         ]);
 
         return response()->json($user, 201);
@@ -75,6 +86,9 @@ class UserManagementController extends Controller
         }
 
         $user->update($validated);
+
+        AuditLog::record('user.update', $request->user()->id, 'user', $id, $validated);
+
         return response()->json($user->fresh());
     }
 
@@ -83,12 +97,26 @@ class UserManagementController extends Controller
         if ($id == $request->user()->id) {
             return response()->json(['message' => 'Cannot delete yourself'], 400);
         }
+
         $user = User::findOrFail($id);
-        $user->progress()->delete();
-        $user->bookmarks()->delete();
-        $user->certificates()->delete();
-        $user->tokens()->delete();
-        $user->delete();
+
+        // E3: Complete cascade deletion of all user-related data
+        DB::transaction(function () use ($user) {
+            $user->progress()->delete();
+            $user->bookmarks()->delete();
+            $user->certificates()->delete();
+            $user->sectionViews()->delete();
+            $user->quizAttempts()->delete();
+            $user->feedback()->delete();
+            $user->aiChatLogs()->delete();
+            $user->tokens()->delete();
+            $user->delete(); // C5: Soft delete with SoftDeletes trait
+        });
+
+        AuditLog::record('user.delete', $request->user()->id, 'user', $id, [
+            'email' => $user->email,
+        ]);
+
         return response()->json(['success' => true]);
     }
 }

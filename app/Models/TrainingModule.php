@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class TrainingModule extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'lms_modules';
 
     protected $fillable = [

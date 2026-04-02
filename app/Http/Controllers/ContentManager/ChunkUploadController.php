@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Media;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Cloudinary\Cloudinary;
 
 class ChunkUploadController extends Controller
 {
@@ -16,12 +16,19 @@ class ChunkUploadController extends Controller
     public function storeChunk(Request $request)
     {
         $request->validate([
-            'chunk'        => 'required|file',
+            'chunk'        => 'required|file|max:10240', // B4: 10MB per chunk max
             'upload_id'    => 'required|string|max:100',
             'chunk_index'  => 'required|integer|min:0',
-            'total_chunks' => 'required|integer|min:1',
+            'total_chunks' => 'required|integer|min:1|max:500',
             'filename'     => 'required|string|max:255',
         ]);
+
+        // B4: Validate filename extension against allowed types
+        $ext = strtolower(pathinfo($request->input('filename'), PATHINFO_EXTENSION));
+        $allowedTypes = config('lms.upload_allowed_types', ['mp4','webm','mov','avi','pdf','png','jpg','jpeg','gif']);
+        if (!in_array($ext, $allowedTypes)) {
+            return response()->json(['message' => "File type .{$ext} is not allowed."], 422);
+        }
 
         $uploadId = preg_replace('/[^a-zA-Z0-9_\-]/', '', $request->input('upload_id'));
         $index    = (int) $request->input('chunk_index');
@@ -77,16 +84,17 @@ class ChunkUploadController extends Controller
         $mimeType = mime_content_type($tmpPath) ?: 'video/mp4';
 
         // Upload to Cloudinary if configured, otherwise fall back to local/s3
-        if (env('CLOUDINARY_URL')) {
+        if (config('lms.cloudinary_url')) {
+            $cloudinary = new Cloudinary(config('lms.cloudinary_url'));
             $resourceType = str_starts_with($mimeType, 'video/') ? 'video' : 'auto';
-            $result = Cloudinary::upload($tmpPath, [
+            $result = $cloudinary->uploadApi()->upload($tmpPath, [
                 'resource_type' => $resourceType,
                 'folder'        => 'ewards-lms',
                 'public_id'     => pathinfo($finalName, PATHINFO_FILENAME),
             ]);
-            $url  = $result->getSecurePath();
+            $url  = $result['secure_url'];
             $disk = 'cloudinary';
-            $finalPath = $result->getPublicId();
+            $finalPath = $result['public_id'];
         } else {
             $finalPath = 'uploads/' . $finalName;
             $disk = config('filesystems.default', 'public');

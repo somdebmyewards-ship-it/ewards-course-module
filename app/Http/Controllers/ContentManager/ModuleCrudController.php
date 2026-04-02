@@ -31,7 +31,15 @@ class ModuleCrudController extends Controller
             'page_route' => 'nullable|string|max:255',
         ]);
 
-        $validated['slug'] = Str::slug($validated['title']);
+        // D3: Generate unique slug
+        $baseSlug = Str::slug($validated['title']);
+        $slug = $baseSlug;
+        $i = 2;
+        while (TrainingModule::where('slug', $slug)->exists()) {
+            $slug = "{$baseSlug}-{$i}";
+            $i++;
+        }
+        $validated['slug'] = $slug;
         $validated['display_order'] = $validated['display_order'] ?? (TrainingModule::max('display_order') + 1);
 
         $module = TrainingModule::create($validated);

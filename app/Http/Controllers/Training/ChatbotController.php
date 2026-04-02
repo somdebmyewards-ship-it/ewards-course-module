@@ -87,8 +87,9 @@ class ChatbotController extends Controller
      */
     private function findContext(string $question): array
     {
-        // Path A: use indexed vector chunks if available
-        if (Schema::hasTable('lms_ai_chunks')) {
+        // G2: Cache Schema::hasTable check to avoid per-request introspection
+        $hasChunksTable = Cache::remember('schema:has_lms_ai_chunks', 3600, fn() => Schema::hasTable('lms_ai_chunks'));
+        if ($hasChunksTable) {
             try {
                 if (DB::table('lms_ai_chunks')->count() > 0) {
                     $embedding = $this->embedder->embed($question);

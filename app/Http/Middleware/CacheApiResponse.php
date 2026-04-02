@@ -12,7 +12,7 @@ class CacheApiResponse
         $response = $next($request);
 
         if ($request->isMethod('GET') && $response->isSuccessful()) {
-            $response->headers->set('Cache-Control', "public, max-age={$maxAge}");
+            $response->headers->set('Cache-Control', "private, max-age={$maxAge}");
             $response->headers->set('Vary', 'Authorization');
         }
 

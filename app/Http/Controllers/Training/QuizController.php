@@ -5,19 +5,27 @@ use App\Http\Controllers\Controller;
 use App\Models\TrainingModule;
 use App\Models\TrainingProgress;
 use App\Models\TrainingQuiz;
-use App\Models\Certificate;
+use App\Models\PointsLedger;
+use App\Services\CompletionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class QuizController extends Controller
 {
+    public function __construct(private CompletionService $completion) {}
+
     public function submit(Request $request, int $moduleId)
     {
+        // D5: Validate quiz answers structure
         $request->validate([
             'answers' => 'required|array',
+            'answers.*' => 'required|string|max:500',
         ]);
 
-        $module = TrainingModule::with('quizzes')->findOrFail($moduleId);
+        // D1: Verify module is published
+        $module = TrainingModule::where('is_published', true)
+            ->with('quizzes')
+            ->findOrFail($moduleId);
         $answers = $request->answers;
 
         $totalQuestions = $module->quizzes->count();
@@ -46,7 +54,7 @@ class QuizController extends Controller
         $passingPercent = $quizMeta ? $quizMeta->passing_percent : 75;
         $passed = $score >= $passingPercent;
 
-        // A2: Wrap multi-step writes (progress + points + certificates) in transaction
+        // A2: Transaction wrapping multi-step writes
         $responseData = DB::transaction(function () use ($request, $module, $moduleId, $passed, $score, $correctCount, $totalQuestions, $results) {
             $userId = $request->user()->id;
             $progress = TrainingProgress::updateOrCreate(
@@ -58,88 +66,15 @@ class QuizController extends Controller
                 ]
             );
 
-            $achievement = null;
             $quizBonusPoints = 0;
-
-            // Award +20 quiz bonus points when quiz is passed
             if ($passed) {
                 $quizBonusPoints = 20;
-                $user = $request->user();
-                $user->increment('points', $quizBonusPoints);
+                $request->user()->increment('points', $quizBonusPoints);
+                PointsLedger::record($userId, $quizBonusPoints, 'quiz_bonus', $moduleId);
             }
 
-            // Check full module completion
-            $checklistOk = !$module->require_checklist || $progress->checklist_completed;
-            if ($passed && $progress->help_viewed && $checklistOk) {
-                if (!$progress->module_completed) {
-                    $progress->update([
-                        'module_completed' => true,
-                        'module_completed_at' => now(),
-                    ]);
-
-                    $user = $request->user();
-                    $modulePoints = $module->points_reward ?: 50;
-                    $user->increment('points', $modulePoints);
-
-                    // Module certificate if enabled
-                    $certUnlocked = false;
-                    if ($module->certificate_enabled) {
-                        Certificate::firstOrCreate(
-                            ['user_id' => $userId, 'module_id' => $module->id, 'certificate_type' => 'module'],
-                            [
-                                'issued_at' => now(),
-                                'certificate_code' => 'EWMOD-' . str_pad($module->id, 4, '0', STR_PAD_LEFT) . '-' . str_pad($userId, 6, '0', STR_PAD_LEFT),
-                            ]
-                        );
-                        $certUnlocked = true;
-                    }
-
-                    // Path certificate check - all modules completed
-                    $totalPublished = TrainingModule::where('is_published', true)->count();
-                    $completedCount = TrainingProgress::where('user_id', $userId)->where('module_completed', true)->count();
-                    if ($completedCount >= $totalPublished && $totalPublished > 0) {
-                        Certificate::firstOrCreate(
-                            ['user_id' => $userId, 'certificate_type' => 'path'],
-                            [
-                                'issued_at' => now(),
-                                'certificate_code' => 'EWPATH-' . str_pad($userId, 6, '0', STR_PAD_LEFT),
-                            ]
-                        );
-                        $certUnlocked = true;
-                    }
-
-                    // Expert certificate check - 300+ points
-                    $freshUser = $user->fresh();
-                    if ($freshUser->points >= 300) {
-                        Certificate::firstOrCreate(
-                            ['user_id' => $userId, 'certificate_type' => 'expert'],
-                            [
-                                'issued_at' => now(),
-                                'certificate_code' => 'EWEXP-' . str_pad($userId, 6, '0', STR_PAD_LEFT),
-                            ]
-                        );
-                        $certUnlocked = true;
-                    }
-
-                    $totalPointsEarned = $modulePoints + $quizBonusPoints;
-                    $oldLevel = ProgressController::getUserLevel($freshUser->points - $totalPointsEarned);
-                    $newLevel = ProgressController::getUserLevel($freshUser->points);
-                    $levelUp = $oldLevel !== $newLevel;
-
-                    $achievement = [
-                        'title' => 'Module Completed!',
-                        'message' => "You completed {$module->title}",
-                        'points_earned' => $totalPointsEarned,
-                        'module_points' => $modulePoints,
-                        'quiz_bonus' => $quizBonusPoints,
-                        'certificate_unlocked' => $certUnlocked,
-                        'level_up' => $levelUp,
-                        'new_level' => $newLevel,
-                        'total_points' => $freshUser->points,
-                        'share_text' => "Just completed {$module->title} on eWards Learning Hub!",
-                    ];
-                }
-            }
+            // A1: Use CompletionService instead of duplicated logic
+            $achievement = $this->completion->checkAndComplete($progress->fresh(), $quizBonusPoints);
 
             $data = [
                 'score' => $score,
@@ -163,7 +98,11 @@ class QuizController extends Controller
 
     public function answers(Request $request, int $moduleId)
     {
-        $module = TrainingModule::with('quizzes')->findOrFail($moduleId);
+        // D1: Verify module is published
+        $module = TrainingModule::where('is_published', true)
+            ->with('quizzes')
+            ->findOrFail($moduleId);
+
         $progress = TrainingProgress::where('user_id', $request->user()->id)
             ->where('module_id', $moduleId)
             ->firstOrFail();

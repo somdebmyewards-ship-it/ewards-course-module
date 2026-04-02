@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $table = 'lms_users';
 
@@ -39,6 +40,8 @@ class User extends Authenticatable
     public function uploadedMedia() { return $this->hasMany(Media::class, 'uploaded_by'); }
     public function sectionViews() { return $this->hasMany(SectionView::class); }
     public function quizAttempts() { return $this->hasMany(QuizAttempt::class); }
+    public function feedback() { return $this->hasMany(ModuleFeedback::class); }
+    public function aiChatLogs() { return $this->hasMany(ModuleAiChatLog::class); }
 
     public function isAdmin(): bool { return $this->role === 'ADMIN'; }
     public function isTrainer(): bool { return $this->role === 'TRAINER'; }

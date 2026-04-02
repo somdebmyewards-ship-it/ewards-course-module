@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Row, Col } from 'antd';
 import { AppstoreOutlined, UnorderedListOutlined, SearchOutlined } from '@ant-design/icons';
 import api, { cachedGet } from '@/lib/api';
+import ModuleCard from '@/components/ModuleCard';
 
 const isIconUrl = (icon?: string) => icon && (icon.startsWith('http') || icon.startsWith('/storage') || icon.startsWith('data:'));
 const ModuleIcon = ({ icon, size = 28 }: { icon?: string; size?: number }) =>
@@ -58,75 +59,6 @@ export default function LearningHub() {
   const getPct = (m: any) => {
     if (!m.progress) return 0;
     return Math.round(((m.progress.help_viewed ? 1 : 0) + (m.progress.checklist_completed ? 1 : 0) + (m.progress.quiz_completed ? 1 : 0)) / 3 * 100);
-  };
-
-  const renderActions = (m: any, st: any, compact = false) => {
-    const pad = compact ? '8px 14px' : '10px 13px';
-    const padMain = compact ? '8px 18px' : '10px 0';
-    const radius = compact ? 10 : 12;
-    if (st.status === 'completed') return (
-      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-        <button onClick={(e) => handleRestart(e, m.id)} disabled={restartingId === m.id} style={{
-          padding: pad, borderRadius: radius, border: '1.5px solid #ffd6d6',
-          background: '#fff1f0', color: '#ff4d4f', fontWeight: 700, fontSize: 12,
-          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s', flexShrink: 0,
-        }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#ffe7e5'; e.currentTarget.style.borderColor = '#ffb3b3'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = '#fff1f0'; e.currentTarget.style.borderColor = '#ffd6d6'; }}
-        >{restartingId === m.id ? '⏳' : '🔄'} Restart</button>
-        <button onClick={(e) => { e.stopPropagation(); navigate(`/learning-hub/${m.slug}`); }} style={{
-          padding: padMain, borderRadius: radius, border: 'none', flex: compact ? undefined : 1,
-          background: 'linear-gradient(135deg, #4a1080, #6B2FA0)',
-          color: '#fff', fontWeight: 700, fontSize: compact ? 12 : 13, cursor: 'pointer',
-          boxShadow: '0 4px 14px rgba(107,47,160,0.3)', transition: 'all 0.2s',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-        }}
-          onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 20px rgba(107,47,160,0.45)'; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(107,47,160,0.3)'; }}
-        >✓ Review</button>
-      </div>
-    );
-    if (st.status === 'in_progress') return (
-      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-        <button onClick={(e) => handleRestart(e, m.id)} disabled={restartingId === m.id} style={{
-          padding: pad, borderRadius: radius, border: '1.5px solid #ffd6d6',
-          background: '#fff1f0', color: '#ff4d4f', fontWeight: 700, fontSize: 12,
-          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s', flexShrink: 0,
-        }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#ffe7e5'; e.currentTarget.style.borderColor = '#ffb3b3'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = '#fff1f0'; e.currentTarget.style.borderColor = '#ffd6d6'; }}
-        >{restartingId === m.id ? '⏳' : '🔄'} Restart</button>
-        <button onClick={(e) => { e.stopPropagation(); navigate(`/learning-hub/${m.slug}`); }} style={{
-          padding: padMain, borderRadius: radius, border: 'none', flex: compact ? undefined : 1,
-          background: 'linear-gradient(135deg,#4a1080,#7B35B8)',
-          color: '#fff', fontWeight: 700, fontSize: compact ? 12 : 13, cursor: 'pointer',
-          boxShadow: '0 4px 14px rgba(107,47,160,0.3)', transition: 'all 0.2s',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 0.3,
-        }}
-          onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 7px 22px rgba(107,47,160,0.5)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(107,47,160,0.3)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-        >▶ Resume</button>
-      </div>
-    );
-    return (
-      <button onClick={(e) => { e.stopPropagation(); navigate(`/learning-hub/${m.slug}`); }} style={{
-        padding: compact ? '9px 22px' : '12px 0', width: compact ? undefined : '100%',
-        borderRadius: radius, border: 'none', cursor: 'pointer', fontWeight: 700,
-        fontSize: compact ? 12 : 13, flexShrink: 0,
-        background: 'linear-gradient(135deg,#2d0066,#6B2FA0)',
-        color: '#fff', boxShadow: '0 4px 14px rgba(107,47,160,0.3)', transition: 'all 0.2s',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, letterSpacing: 0.3,
-      }}
-        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 7px 22px rgba(107,47,160,0.5)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-        onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(107,47,160,0.3)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-      >Start</button>
-    );
-  };
-
-  const coverGradient = (status: string) => {
-    if (status === 'completed') return 'linear-gradient(145deg, #2d0066 0%, #4a1080 50%, #6B2FA0 100%)';
-    if (status === 'in_progress') return 'linear-gradient(145deg, #2d0066 0%, #4a1080 50%, #6B2FA0 100%)';
-    return 'linear-gradient(145deg, #1c1c35 0%, #2a2a4a 50%, #363660 100%)';
   };
 
   const inProgressModules = useMemo(() => modules.filter(m =>
@@ -429,227 +361,33 @@ export default function LearningHub() {
       {/* ===== GRID VIEW ===== */}
       {viewMode === 'grid' && filteredModules.length > 0 && (
         <Row gutter={[20, 20]}>
-          {filteredModules.map((m: any) => {
-            const st = getStatus(m);
-            const pct = getPct(m);
-            return (
-              <Col xs={24} sm={12} lg={8} key={m.id} className="card-enter">
-                <div
-                  onClick={() => navigate(`/learning-hub/${m.slug}`)}
-                  style={{
-                    background: '#fff', borderRadius: 20, cursor: 'pointer',
-                    border: `1.5px solid ${st.border}`,
-                    transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
-                    height: '100%', display: 'flex', flexDirection: 'column',
-                    overflow: 'hidden',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.boxShadow = '0 16px 44px rgba(107,47,160,0.18)';
-                    e.currentTarget.style.transform = 'translateY(-5px)';
-                    e.currentTarget.style.borderColor = '#9B59B6';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.borderColor = st.border;
-                  }}
-                >
-                  {/* Card Cover — LinkedIn Learning style */}
-                  <div style={{
-                    background: coverGradient(st.status),
-                    height: 156, padding: '18px 20px', position: 'relative', overflow: 'hidden',
-                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                  }}>
-                    <div style={{ position: 'absolute', top: -35, right: -35, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
-                    <div style={{ position: 'absolute', bottom: -25, left: -15, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
-
-                    {/* Status badge top-right */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, color: '#fff',
-                        background: 'rgba(255,255,255,0.14)', borderRadius: 20, padding: '4px 11px',
-                        border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(6px)',
-                        display: 'flex', alignItems: 'center', gap: 5,
-                      }}>
-                        {st.status === 'completed' && <span style={{ fontSize: 9 }}>✓</span>}
-                        {st.status === 'in_progress' && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#c7a8e8', display: 'inline-block' }} />}
-                        {st.label}
-                      </span>
-                    </div>
-
-                    {/* Icon + meta row */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                      <div style={{
-                        width: 58, height: 58, borderRadius: 15,
-                        background: 'rgba(255,255,255,0.13)',
-                        border: '1.5px solid rgba(255,255,255,0.2)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 28, backdropFilter: 'blur(6px)',
-                        boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
-                        flexShrink: 0, overflow: 'hidden',
-                      }}>
-                        <ModuleIcon icon={m.icon} size={isIconUrl(m.icon) ? 58 : 28} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.65)', marginBottom: 3 }}>
-                          {m.sections_count || 0} Lessons
-                        </div>
-                        {m.estimated_minutes && (
-                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            ⏱ {m.estimated_minutes} min
-                          </div>
-                        )}
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>
-                          📝 {m.quizzes_count || 0} quiz
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Progress bar at cover bottom */}
-                    <div style={{ height: 4, borderRadius: 3, background: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
-                      <div style={{
-                        height: '100%', borderRadius: 3,
-                        width: `${pct}%`, transition: 'width 0.7s ease',
-                        background: 'rgba(255,255,255,0.85)',
-                        boxShadow: pct > 0 ? '0 0 8px rgba(255,255,255,0.3)' : 'none',
-                      }} />
-                    </div>
-                  </div>
-
-                  {/* Card Body */}
-                  <div style={{ padding: '18px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e', marginBottom: 6, lineHeight: 1.35, letterSpacing: -0.2 }}>
-                      {m.title}
-                    </div>
-                    <div style={{
-                      fontSize: 12, color: '#9e9e9e', lineHeight: 1.65, marginBottom: 15, flex: 1,
-                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                    }}>
-                      {m.description}
-                    </div>
-
-                    {/* Progress row */}
-                    {pct > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                        <div style={{ flex: 1, height: 5, borderRadius: 3, background: '#f0e8ff', overflow: 'hidden' }}>
-                          <div style={{
-                            height: '100%', borderRadius: 3,
-                            background: 'linear-gradient(90deg, #4a1080, #7B35B8)',
-                            width: `${pct}%`, transition: 'width 0.6s ease',
-                          }} />
-                        </div>
-                        <span style={{
-                          fontSize: 11, fontWeight: 800, flexShrink: 0,
-                          color: '#6B2FA0',
-                        }}>{pct}%</span>
-                      </div>
-                    )}
-
-                    {/* Tags */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 16 }}>
-                      <span style={{ fontSize: 10, padding: '3px 9px', borderRadius: 6, background: '#f7f5ff', color: '#6B2FA0', border: '1px solid #ede5ff', fontWeight: 600 }}>
-                        📖 {m.sections_count || 0} sections
-                      </span>
-                      <span style={{ fontSize: 10, padding: '3px 9px', borderRadius: 6, background: '#f7f5ff', color: '#6B2FA0', border: '1px solid #ede5ff', fontWeight: 600 }}>
-                        📝 {m.quizzes_count || 0} quiz
-                      </span>
-                      {st.status === 'completed' && (
-                        <span style={{ fontSize: 10, padding: '3px 9px', borderRadius: 6, background: '#f3ebfc', color: '#6B2FA0', border: '1px solid #d3adf7', fontWeight: 700 }}>
-                          ✓ Certified
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Action buttons */}
-                    {renderActions(m, st)}
-                  </div>
-                </div>
-              </Col>
-            );
-          })}
+          {filteredModules.map((m: any) => (
+            <Col xs={24} sm={12} lg={8} key={m.id} className="card-enter">
+              <ModuleCard
+                mod={m}
+                progress={m.progress}
+                viewMode="grid"
+                onStart={() => navigate(`/learning-hub/${m.slug}`)}
+                onRestart={() => handleRestart({ stopPropagation: () => {} } as any, m.id)}
+              />
+            </Col>
+          ))}
         </Row>
       )}
 
       {/* ===== LIST VIEW ===== */}
       {viewMode === 'list' && filteredModules.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {filteredModules.map((m: any) => {
-            const st = getStatus(m);
-            const pct = getPct(m);
-            return (
-              <div
-                key={m.id}
-                className="card-enter"
-                onClick={() => navigate(`/learning-hub/${m.slug}`)}
-                style={{
-                  background: '#fff', borderRadius: 18, padding: '16px 20px',
-                  border: `1.5px solid ${st.border}`,
-                  display: 'flex', alignItems: 'center', gap: 16,
-                  cursor: 'pointer', transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.boxShadow = '0 8px 28px rgba(107,47,160,0.13)';
-                  e.currentTarget.style.transform = 'translateX(4px)';
-                  e.currentTarget.style.borderColor = '#9B59B6';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
-                  e.currentTarget.style.transform = 'translateX(0)';
-                  e.currentTarget.style.borderColor = st.border;
-                }}
-              >
-                {/* Icon */}
-                <div style={{
-                  width: 56, height: 56, borderRadius: 15, flexShrink: 0,
-                  background: coverGradient(st.status),
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 26, boxShadow: '0 4px 14px rgba(0,0,0,0.18)', overflow: 'hidden',
-                }}>
-                  <ModuleIcon icon={m.icon} size={isIconUrl(m.icon) ? 56 : 26} />
-                </div>
-
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontWeight: 800, fontSize: 14, color: '#1a1a2e', letterSpacing: -0.1 }}>{m.title}</span>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, color: st.color,
-                      background: st.bg, padding: '3px 10px', borderRadius: 10,
-                      border: `1px solid ${st.border}`, flexShrink: 0,
-                    }}>
-                      {st.status === 'completed' && '✓ '}{st.label}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 12, color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 8 }}>
-                    {m.description}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 140, height: 5, borderRadius: 3, background: '#f0e8ff', overflow: 'hidden', flexShrink: 0 }}>
-                      <div style={{
-                        height: '100%', borderRadius: 3, transition: 'width 0.5s',
-                        background: st.status === 'completed' || st.status === 'in_progress'
-                          ? 'linear-gradient(90deg,#4a1080,#7B35B8)'
-                          : '#e0e0e0',
-                        width: `${pct}%`,
-                      }} />
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#6B2FA0', flexShrink: 0 }}>{pct}%</span>
-                    <span style={{ fontSize: 11, color: '#ddd' }}>·</span>
-                    <span style={{ fontSize: 11, color: '#c0c0c0' }}>📖 {m.sections_count || 0} lessons</span>
-                    {m.estimated_minutes && <>
-                      <span style={{ fontSize: 11, color: '#ddd' }}>·</span>
-                      <span style={{ fontSize: 11, color: '#c0c0c0' }}>⏱ {m.estimated_minutes}m</span>
-                    </>}
-                  </div>
-                </div>
-
-                {/* Buttons */}
-                {renderActions(m, st, true)}
-              </div>
-            );
-          })}
+          {filteredModules.map((m: any) => (
+            <ModuleCard
+              key={m.id}
+              mod={m}
+              progress={m.progress}
+              viewMode="list"
+              onStart={() => navigate(`/learning-hub/${m.slug}`)}
+              onRestart={() => handleRestart({ stopPropagation: () => {} } as any, m.id)}
+            />
+          ))}
         </div>
       )}
 

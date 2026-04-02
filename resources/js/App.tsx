@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { Spin } from 'antd';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Lazy load pages
 const Login = React.lazy(() => import('@/pages/Login'));
@@ -61,5 +62,9 @@ const AppRoutes = () => {
 };
 
 export default function App() {
-  return <AuthProvider><AppRoutes /></AuthProvider>;
+  return (
+    <ErrorBoundary>
+      <AuthProvider><AppRoutes /></AuthProvider>
+    </ErrorBoundary>
+  );
 }

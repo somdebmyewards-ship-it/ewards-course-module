@@ -31,8 +31,13 @@ class RetrievalService
             $query->where('module_id', $moduleId);
         }
 
-        // Load all chunks for this module (typically < 500 rows per module)
-        $chunks = $query->get();
+        // C2: Load chunks for this module. For cross-module, limit to avoid OOM.
+        // TODO: When chunk count exceeds 5000, migrate to pgvector or MySQL vector index.
+        if ($crossModule) {
+            $chunks = $query->limit(2000)->get();
+        } else {
+            $chunks = $query->get(); // typically < 500 rows per module
+        }
 
         if ($chunks->isEmpty()) return [];
 

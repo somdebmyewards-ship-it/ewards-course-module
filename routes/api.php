@@ -85,13 +85,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('section-views', [SectionViewController::class, 'index']);
         Route::get('module-route', [ModuleRouteController::class, 'lookup']);
 
-        // Global cross-module chatbot (Ela)
-        Route::post('chatbot/ask', [ChatbotController::class, 'ask']);
+        // G1: Global cross-module chatbot (Ela) — rate limited
+        Route::middleware('throttle:15,1')->post('chatbot/ask', [ChatbotController::class, 'ask']);
 
-        // ── Smart Learning Assistant ──────────────────────────────────
+        // G1: Smart Learning Assistant — rate limited
         Route::get( 'modules/{moduleId}/assistant/status',      [AssistantController::class, 'status']);
         Route::get( 'modules/{moduleId}/assistant/suggestions', [AssistantController::class, 'suggestions']);
-        Route::post('modules/{moduleId}/assistant/chat',        [AssistantController::class, 'chat']);
+        Route::middleware('throttle:10,1')->post('modules/{moduleId}/assistant/chat', [AssistantController::class, 'chat']);
 
         // Admin/Trainer assistant management
         Route::middleware('role:ADMIN,TRAINER')->group(function () {

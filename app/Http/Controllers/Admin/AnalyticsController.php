@@ -13,7 +13,6 @@ class AnalyticsController extends Controller
 {
     public function index()
     {
-        // Single query for user counts
         $userCounts = User::selectRaw("
             SUM(CASE WHEN approved = 1 THEN 1 ELSE 0 END) as total_users,
             SUM(CASE WHEN approved = 0 THEN 1 ELSE 0 END) as pending_users
@@ -22,7 +21,6 @@ class AnalyticsController extends Controller
         $totalUsers = (int) $userCounts->total_users;
         $pendingUsers = (int) $userCounts->pending_users;
 
-        // Single queries for other counts
         $totalCertificates = Certificate::count();
         $totalModules = TrainingModule::where('is_published', true)->count();
 
@@ -33,9 +31,12 @@ class AnalyticsController extends Controller
 
         $completedModules = (int) $progressCounts->completed_modules;
         $helpViewed = (int) $progressCounts->help_viewed;
-        $quizSubmissions = DB::table('lms_quiz_attempts')->count();
 
-        // Module stats — single batch query instead of N+1
+        $quizSubmissions = DB::table('lms_quiz_attempts')->exists()
+            ? DB::table('lms_quiz_attempts')->count()
+            : 0;
+
+        // Module stats — batch query
         $modules = TrainingModule::where('is_published', true)->orderBy('display_order')->get();
         $moduleCompletions = TrainingProgress::where('module_completed', true)
             ->selectRaw('module_id, COUNT(*) as completed')
@@ -51,43 +52,34 @@ class AnalyticsController extends Controller
             ];
         });
 
-        // Merchant adoption — ALL done with batch queries, no N+1
-        $merchantUsers = User::where('approved', true)
-            ->whereNotNull('merchant_name_entered')
-            ->where('merchant_name_entered', '!=', '')
-            ->select('id', 'merchant_name_entered')
-            ->get();
-
-        $merchantGroups = $merchantUsers->groupBy('merchant_name_entered');
-        $allMerchantUserIds = $merchantUsers->pluck('id');
-
-        // Single query: get all progress for all merchant users
-        $allProgress = TrainingProgress::whereIn('user_id', $allMerchantUserIds)
-            ->select('user_id', 'module_completed', 'progress_percent')
-            ->get();
-
-        $merchantAdoption = $merchantGroups->map(function ($users, $merchantName) use ($allProgress) {
-            $userIds = $users->pluck('id');
-            $progressData = $allProgress->whereIn('user_id', $userIds);
-            $userCount = $users->count();
-
-            $completedCount = $progressData->where('module_completed', true)->count();
-            $avgProgress = $progressData->count() > 0
-                ? round($progressData->avg('progress_percent'), 1)
-                : 0;
-            $completedUsers = $progressData->where('module_completed', true)
-                ->unique('user_id')->count();
-
-            return [
-                'merchant_name' => $merchantName,
-                'total_users' => $userCount,
-                'user_count' => $userCount,
-                'completed_users' => $completedUsers,
-                'avg_progress' => $avgProgress,
-                'completed_count' => $completedCount,
-                'adoption_rate' => $userCount > 0 ? round(($completedUsers / $userCount) * 100) : 0,
-            ];
-        })->sortByDesc('user_count')->values();
+        // C3: Merchant adoption via SQL GROUP BY instead of in-memory groupBy
+        $merchantAdoption = DB::table('lms_users as u')
+            ->leftJoin('lms_progress as p', 'u.id', '=', 'p.user_id')
+            ->where('u.approved', true)
+            ->whereNotNull('u.merchant_name_entered')
+            ->where('u.merchant_name_entered', '!=', '')
+            ->groupBy('u.merchant_name_entered')
+            ->selectRaw("
+                u.merchant_name_entered as merchant_name,
+                COUNT(DISTINCT u.id) as total_users,
+                COUNT(DISTINCT u.id) as user_count,
+                COUNT(DISTINCT CASE WHEN p.module_completed = 1 THEN u.id END) as completed_users,
+                ROUND(AVG(CASE WHEN p.id IS NOT NULL THEN p.progress_percent ELSE 0 END), 1) as avg_progress,
+                SUM(CASE WHEN p.module_completed = 1 THEN 1 ELSE 0 END) as completed_count
+            ")
+            ->orderByDesc('total_users')
+            ->get()
+            ->map(fn($row) => [
+                'merchant_name' => $row->merchant_name,
+                'total_users' => (int) $row->total_users,
+                'user_count' => (int) $row->user_count,
+                'completed_users' => (int) $row->completed_users,
+                'avg_progress' => (float) $row->avg_progress,
+                'completed_count' => (int) $row->completed_count,
+                'adoption_rate' => $row->total_users > 0
+                    ? round(($row->completed_users / $row->total_users) * 100)
+                    : 0,
+            ]);
 
         return response()->json([
             'total_users' => $totalUsers,

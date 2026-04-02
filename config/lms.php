@@ -33,4 +33,11 @@ return [
     'certificate_company_name' => env('CERTIFICATE_COMPANY_NAME', 'eWards'),
     'certificate_signatory'    => env('CERTIFICATE_SIGNATORY', 'eWards Training Team'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cloudinary
+    |--------------------------------------------------------------------------
+    */
+    'cloudinary_url' => env('CLOUDINARY_URL'),
+
 ];
