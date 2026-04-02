@@ -88,9 +88,9 @@ class ChatbotController extends Controller
     private function findContext(string $question): array
     {
         // Path A: use indexed vector chunks if available
-        if (Schema::hasTable('lms_module_ai_chunks')) {
+        if (Schema::hasTable('lms_ai_chunks')) {
             try {
-                if (DB::table('lms_module_ai_chunks')->count() > 0) {
+                if (DB::table('lms_ai_chunks')->count() > 0) {
                     $embedding = $this->embedder->embed($question);
                     // crossModule=true → search all modules
                     $chunks = app(RetrievalService::class)->retrieve(0, $embedding, 6, true);

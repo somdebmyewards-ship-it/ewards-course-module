@@ -33,7 +33,7 @@ class AnalyticsController extends Controller
 
         $completedModules = (int) $progressCounts->completed_modules;
         $helpViewed = (int) $progressCounts->help_viewed;
-        $quizSubmissions = DB::table('quiz_attempts')->count();
+        $quizSubmissions = DB::table('lms_quiz_attempts')->count();
 
         // Module stats — single batch query instead of N+1
         $modules = TrainingModule::where('is_published', true)->orderBy('display_order')->get();

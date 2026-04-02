@@ -27,7 +27,7 @@ return new class extends Migration
         });
 
         // Training progress: user_id index (already has unique on user_id+module_id, but single col helps)
-        Schema::table('lms_training_progress', function (Blueprint $table) {
+        Schema::table('lms_progress', function (Blueprint $table) {
             $table->index('user_id', 'tp_user_idx');
         });
 
@@ -48,7 +48,7 @@ return new class extends Migration
         Schema::table('lms_quiz_attempts', function (Blueprint $table) {
             $table->dropIndex('qa_user_module_idx');
         });
-        Schema::table('lms_training_progress', function (Blueprint $table) {
+        Schema::table('lms_progress', function (Blueprint $table) {
             $table->dropIndex('tp_user_idx');
         });
         Schema::table('lms_module_feedback', function (Blueprint $table) {

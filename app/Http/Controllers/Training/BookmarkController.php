@@ -20,8 +20,8 @@ class BookmarkController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'module_id' => 'required|exists:lms_training_modules,id',
-            'section_id' => 'nullable|exists:lms_training_sections,id',
+            'module_id' => 'required|exists:lms_modules,id',
+            'section_id' => 'nullable|exists:lms_sections,id',
         ]);
 
         $bookmark = Bookmark::firstOrCreate([

@@ -50,7 +50,7 @@ class ModuleCrudController extends Controller
         $module = TrainingModule::findOrFail($id);
         $validated = $request->validate([
             'title'               => 'sometimes|string|max:255',
-            'slug'                => 'sometimes|string|max:255|unique:lms_training_modules,slug,' . $id,
+            'slug'                => 'sometimes|string|max:255|unique:lms_modules,slug,' . $id,
             'description'         => 'sometimes|nullable|string',
             'icon'                => 'nullable|string|max:500',
             'display_order'       => 'filled|integer|min:1',

@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `lms_personal_access_tokens` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 7. Training Modules (with all additions merged) ─────────
-CREATE TABLE IF NOT EXISTS `lms_training_modules` (
+CREATE TABLE IF NOT EXISTS `lms_modules` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `title` VARCHAR(255) NOT NULL,
     `slug` VARCHAR(255) NOT NULL,
@@ -119,11 +119,11 @@ CREATE TABLE IF NOT EXISTS `lms_training_modules` (
     `page_route` VARCHAR(255) NOT NULL DEFAULT '',
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
-    UNIQUE KEY `lms_training_modules_slug_unique` (`slug`)
+    UNIQUE KEY `lms_modules_slug_unique` (`slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 8. Training Sections (with all additions merged) ────────
-CREATE TABLE IF NOT EXISTS `lms_training_sections` (
+CREATE TABLE IF NOT EXISTS `lms_sections` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `module_id` BIGINT UNSIGNED NOT NULL,
     `title` VARCHAR(255) NOT NULL,
@@ -140,23 +140,23 @@ CREATE TABLE IF NOT EXISTS `lms_training_sections` (
     `status` VARCHAR(255) NOT NULL DEFAULT 'published',
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
-    CONSTRAINT `lms_training_sections_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `lms_sections_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE,
     KEY `ts_module_required_idx` (`module_id`, `is_required`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 9. Training Checklists ──────────────────────────────────
-CREATE TABLE IF NOT EXISTS `lms_training_checklists` (
+CREATE TABLE IF NOT EXISTS `lms_checklists` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `module_id` BIGINT UNSIGNED NOT NULL,
     `label` VARCHAR(500) NOT NULL,
     `display_order` INT UNSIGNED NOT NULL,
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
-    CONSTRAINT `lms_training_checklists_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE
+    CONSTRAINT `lms_checklists_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 10. Training Quizzes ────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `lms_training_quizzes` (
+CREATE TABLE IF NOT EXISTS `lms_quizzes` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `module_id` BIGINT UNSIGNED NOT NULL,
     `quiz_metadata_id` BIGINT UNSIGNED NULL DEFAULT NULL,
@@ -167,11 +167,11 @@ CREATE TABLE IF NOT EXISTS `lms_training_quizzes` (
     `display_order` INT UNSIGNED NOT NULL,
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
-    CONSTRAINT `lms_training_quizzes_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE
+    CONSTRAINT `lms_quizzes_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 11. Training Progress (with all additions merged) ───────
-CREATE TABLE IF NOT EXISTS `lms_training_progress` (
+CREATE TABLE IF NOT EXISTS `lms_progress` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `user_id` BIGINT UNSIGNED NOT NULL,
     `module_id` BIGINT UNSIGNED NOT NULL,
@@ -190,13 +190,13 @@ CREATE TABLE IF NOT EXISTS `lms_training_progress` (
     `last_section_id` BIGINT UNSIGNED NULL DEFAULT NULL,
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
-    UNIQUE KEY `lms_training_progress_user_module_unique` (`user_id`, `module_id`),
+    UNIQUE KEY `lms_progress_user_module_unique` (`user_id`, `module_id`),
     KEY `tp_module_id_idx` (`module_id`),
     KEY `tp_module_completed_idx` (`module_completed`),
     KEY `tp_module_completed_combo_idx` (`module_id`, `module_completed`),
-    CONSTRAINT `lms_training_progress_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `lms_users` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `lms_training_progress_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `lms_training_progress_last_section_id_foreign` FOREIGN KEY (`last_section_id`) REFERENCES `lms_training_sections` (`id`) ON DELETE SET NULL
+    CONSTRAINT `lms_progress_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `lms_users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `lms_progress_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `lms_progress_last_section_id_foreign` FOREIGN KEY (`last_section_id`) REFERENCES `lms_sections` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 12. Bookmarks ───────────────────────────────────────────
@@ -209,8 +209,8 @@ CREATE TABLE IF NOT EXISTS `lms_bookmarks` (
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
     UNIQUE KEY `lms_bookmarks_user_section_unique` (`user_id`, `section_id`),
     CONSTRAINT `lms_bookmarks_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `lms_users` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `lms_bookmarks_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `lms_bookmarks_section_id_foreign` FOREIGN KEY (`section_id`) REFERENCES `lms_training_sections` (`id`) ON DELETE CASCADE
+    CONSTRAINT `lms_bookmarks_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `lms_bookmarks_section_id_foreign` FOREIGN KEY (`section_id`) REFERENCES `lms_sections` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 13. Certificates (with types + composite unique) ────────
@@ -227,7 +227,7 @@ CREATE TABLE IF NOT EXISTS `lms_certificates` (
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
     UNIQUE KEY `cert_user_type_module` (`user_id`, `certificate_type`, `module_id`),
     CONSTRAINT `lms_certificates_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `lms_users` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `lms_certificates_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE SET NULL
+    CONSTRAINT `lms_certificates_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 14. Media ───────────────────────────────────────────────
@@ -257,8 +257,8 @@ CREATE TABLE IF NOT EXISTS `lms_section_views` (
     KEY `sv_module_id_idx` (`module_id`),
     KEY `sv_module_user_idx` (`module_id`, `user_id`),
     CONSTRAINT `lms_section_views_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `lms_users` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `lms_section_views_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `lms_section_views_section_id_foreign` FOREIGN KEY (`section_id`) REFERENCES `lms_training_sections` (`id`) ON DELETE CASCADE
+    CONSTRAINT `lms_section_views_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `lms_section_views_section_id_foreign` FOREIGN KEY (`section_id`) REFERENCES `lms_sections` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 16. Module Routes ───────────────────────────────────────
@@ -270,8 +270,8 @@ CREATE TABLE IF NOT EXISTS `lms_module_routes` (
     `context_label` VARCHAR(255) NULL DEFAULT NULL,
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
-    CONSTRAINT `lms_module_routes_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `lms_module_routes_section_id_foreign` FOREIGN KEY (`section_id`) REFERENCES `lms_training_sections` (`id`) ON DELETE SET NULL
+    CONSTRAINT `lms_module_routes_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `lms_module_routes_section_id_foreign` FOREIGN KEY (`section_id`) REFERENCES `lms_sections` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 17. Quiz Attempts ───────────────────────────────────────
@@ -284,7 +284,7 @@ CREATE TABLE IF NOT EXISTS `lms_quiz_attempts` (
     `answers` JSON NULL DEFAULT NULL,
     `attempted_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `lms_quiz_attempts_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `lms_users` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `lms_quiz_attempts_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE
+    CONSTRAINT `lms_quiz_attempts_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 18. Quiz Metadata ───────────────────────────────────────
@@ -296,7 +296,7 @@ CREATE TABLE IF NOT EXISTS `lms_quiz_metadata` (
     `is_active` TINYINT(1) NOT NULL DEFAULT 1,
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
-    CONSTRAINT `lms_quiz_metadata_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE
+    CONSTRAINT `lms_quiz_metadata_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 19. Module Feedback ─────────────────────────────────────
@@ -313,11 +313,11 @@ CREATE TABLE IF NOT EXISTS `lms_module_feedback` (
     KEY `mf_module_id_idx` (`module_id`),
     KEY `mf_rating_idx` (`rating`),
     CONSTRAINT `lms_module_feedback_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `lms_users` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `lms_module_feedback_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE
+    CONSTRAINT `lms_module_feedback_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 20. Module AI Settings ──────────────────────────────────
-CREATE TABLE IF NOT EXISTS `lms_module_ai_settings` (
+CREATE TABLE IF NOT EXISTS `lms_ai_settings` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `module_id` BIGINT UNSIGNED NOT NULL,
     `assistant_enabled` TINYINT(1) NOT NULL DEFAULT 0,
@@ -326,12 +326,12 @@ CREATE TABLE IF NOT EXISTS `lms_module_ai_settings` (
     `index_status` VARCHAR(30) NOT NULL DEFAULT 'not_indexed',
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
-    UNIQUE KEY `lms_module_ai_settings_module_id_unique` (`module_id`),
-    CONSTRAINT `lms_module_ai_settings_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE
+    UNIQUE KEY `lms_ai_settings_module_id_unique` (`module_id`),
+    CONSTRAINT `lms_ai_settings_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 21. Module AI Documents ─────────────────────────────────
-CREATE TABLE IF NOT EXISTS `lms_module_ai_documents` (
+CREATE TABLE IF NOT EXISTS `lms_ai_documents` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `module_id` BIGINT UNSIGNED NOT NULL,
     `source_type` VARCHAR(30) NOT NULL,
@@ -343,12 +343,12 @@ CREATE TABLE IF NOT EXISTS `lms_module_ai_documents` (
     `indexed_at` TIMESTAMP NULL DEFAULT NULL,
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
-    KEY `lms_module_ai_documents_module_source_idx` (`module_id`, `source_type`),
-    CONSTRAINT `lms_module_ai_documents_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE
+    KEY `lms_ai_documents_module_source_idx` (`module_id`, `source_type`),
+    CONSTRAINT `lms_ai_documents_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 22. Module AI Chunks ────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `lms_module_ai_chunks` (
+CREATE TABLE IF NOT EXISTS `lms_ai_chunks` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `document_id` BIGINT UNSIGNED NOT NULL,
     `module_id` BIGINT UNSIGNED NOT NULL,
@@ -359,14 +359,14 @@ CREATE TABLE IF NOT EXISTS `lms_module_ai_chunks` (
     `source_title` VARCHAR(255) NULL DEFAULT NULL,
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
-    KEY `lms_module_ai_chunks_module_id_idx` (`module_id`),
-    KEY `lms_module_ai_chunks_document_id_idx` (`document_id`),
-    CONSTRAINT `lms_module_ai_chunks_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `lms_module_ai_documents` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `lms_module_ai_chunks_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_training_modules` (`id`) ON DELETE CASCADE
+    KEY `lms_ai_chunks_module_id_idx` (`module_id`),
+    KEY `lms_ai_chunks_document_id_idx` (`document_id`),
+    CONSTRAINT `lms_ai_chunks_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `lms_ai_documents` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `lms_ai_chunks_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `lms_modules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 23. Module AI Chat Logs ─────────────────────────────────
-CREATE TABLE IF NOT EXISTS `lms_module_ai_chat_logs` (
+CREATE TABLE IF NOT EXISTS `lms_ai_chat_logs` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `user_id` BIGINT UNSIGNED NOT NULL,
     `module_id` BIGINT UNSIGNED NOT NULL,
@@ -379,8 +379,8 @@ CREATE TABLE IF NOT EXISTS `lms_module_ai_chat_logs` (
     `tokens_used` INT NOT NULL DEFAULT 0,
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,
-    KEY `lms_module_ai_chat_logs_user_module_idx` (`user_id`, `module_id`),
-    KEY `lms_module_ai_chat_logs_created_at_idx` (`created_at`)
+    KEY `lms_ai_chat_logs_user_module_idx` (`user_id`, `module_id`),
+    KEY `lms_ai_chat_logs_created_at_idx` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── 24. Jobs ────────────────────────────────────────────────
@@ -399,7 +399,7 @@ CREATE TABLE IF NOT EXISTS `lms_jobs` (
 CREATE INDEX `idx_lms_bookmarks_user_module` ON `lms_bookmarks` (`user_id`, `module_id`);
 CREATE INDEX `idx_lms_certificates_user_type` ON `lms_certificates` (`user_id`, `certificate_type`);
 CREATE INDEX `idx_lms_quiz_attempts_user_module` ON `lms_quiz_attempts` (`user_id`, `module_id`);
-CREATE INDEX `idx_lms_training_progress_user` ON `lms_training_progress` (`user_id`);
+CREATE INDEX `idx_lms_progress_user` ON `lms_progress` (`user_id`);
 CREATE INDEX `idx_lms_module_feedback_module` ON `lms_module_feedback` (`module_id`);
 
 -- ── Mark all migrations as run ──────────────────────────────
@@ -442,7 +442,8 @@ INSERT INTO `migrations` (`migration`, `batch`) VALUES
 ('2026_03_31_101935_create_jobs_table', 1),
 ('2026_03_31_110000_increase_icon_column_size', 1),
 ('2026_04_01_000001_rename_tables_with_lms_prefix', 1),
-('2026_04_01_000002_add_developer_brief_indexes', 1);
+('2026_04_01_000002_add_developer_brief_indexes', 1),
+('2026_04_02_000001_rename_lms_training_to_lms', 1);
 
 -- ============================================================
 -- DONE! All 24 tables + migrations table created.

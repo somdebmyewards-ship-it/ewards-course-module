@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ModuleAiChunk extends Model
 {
-    protected $table = 'lms_module_ai_chunks';
+    protected $table = 'lms_ai_chunks';
 
     protected $fillable = [
         'document_id',

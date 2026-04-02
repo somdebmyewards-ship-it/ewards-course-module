@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ModuleAiDocument extends Model
 {
-    protected $table = 'lms_module_ai_documents';
+    protected $table = 'lms_ai_documents';
 
     protected $fillable = [
         'module_id',

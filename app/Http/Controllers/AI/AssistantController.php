@@ -43,7 +43,7 @@ class AssistantController extends Controller
     public function suggestions(int $moduleId)
     {
         $suggestions = Cache::remember("ai_suggestions:{$moduleId}", 86400, function () use ($moduleId) {
-            $sectionTitles = \DB::table('training_sections')
+            $sectionTitles = \DB::table('lms_sections')
                 ->where('module_id', $moduleId)
                 ->whereNotNull('title')
                 ->pluck('title')

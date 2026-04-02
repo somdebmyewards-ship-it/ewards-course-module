@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 class TrainingModule extends Model
 {
-    protected $table = 'lms_training_modules';
+    protected $table = 'lms_modules';
 
     protected $fillable = [
         'title', 'slug', 'description', 'estimated_minutes', 'icon', 'display_order',

@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ModuleAiChatLog extends Model
 {
-    protected $table = 'lms_module_ai_chat_logs';
+    protected $table = 'lms_ai_chat_logs';
 
     protected $fillable = [
         'user_id',

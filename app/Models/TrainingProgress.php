@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class TrainingProgress extends Model
 {
-    protected $table = 'lms_training_progress';
+    protected $table = 'lms_progress';
 
     protected $fillable = [
         'user_id', 'module_id', 'help_viewed', 'help_viewed_at',

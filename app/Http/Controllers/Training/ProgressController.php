@@ -153,7 +153,7 @@ class ProgressController extends Controller
 
     public function saveResume(Request $request, int $moduleId)
     {
-        $request->validate(['section_id' => 'required|exists:lms_training_sections,id']);
+        $request->validate(['section_id' => 'required|exists:lms_sections,id']);
 
         $progress = TrainingProgress::updateOrCreate(
             ['user_id' => $request->user()->id, 'module_id' => $moduleId],

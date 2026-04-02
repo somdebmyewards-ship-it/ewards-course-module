@@ -11,8 +11,8 @@ class SectionViewController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'module_id' => 'required|exists:lms_training_modules,id',
-            'section_id' => 'required|exists:lms_training_sections,id',
+            'module_id' => 'required|exists:lms_modules,id',
+            'section_id' => 'required|exists:lms_sections,id',
         ]);
 
         SectionView::updateOrCreate(
