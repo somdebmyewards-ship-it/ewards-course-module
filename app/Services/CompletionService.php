@@ -102,38 +102,6 @@ class CompletionService
     }
 
     /**
-     * Auto-issue any certificates the user has earned but not yet received.
-     * Called by CertificateController on read endpoints.
-     */
-    public function autoIssueMissing(int $userId): void
-    {
-        $user = User::find($userId);
-        if (!$user) return;
-
-        // Path certificate
-        $totalPublished = TrainingModule::where('is_published', true)->count();
-        $completedCount = TrainingProgress::where('user_id', $userId)
-            ->where('module_completed', true)->count();
-        if ($completedCount >= $totalPublished && $totalPublished > 0) {
-            $this->issueCertificate($userId, 'path');
-        }
-
-        // Expert certificate
-        if ($user->points >= 300) {
-            $this->issueCertificate($userId, 'expert');
-        }
-
-        // Per-module certificates
-        $completedModuleIds = TrainingProgress::where('user_id', $userId)
-            ->where('module_completed', true)->pluck('module_id');
-        $enabledModules = TrainingModule::whereIn('id', $completedModuleIds)
-            ->where('certificate_enabled', true)->get();
-        foreach ($enabledModules as $mod) {
-            $this->issueCertificate($userId, 'module', $mod->id);
-        }
-    }
-
-    /**
      * Generate PDF data array for a certificate.
      */
     public function buildPdfData(Certificate $cert, User $user): array
@@ -166,16 +134,17 @@ class CompletionService
     }
 
     /**
-     * B6: Non-predictable certificate codes using random segment.
+     * B6: Fully random certificate codes — no userId or moduleId embedded.
+     * Format: EW-{TYPE}-{RANDOM10}
      */
     private function generateCode(string $type, int $userId, ?int $moduleId = null): string
     {
-        $rand = strtoupper(Str::random(6));
+        $rand = strtoupper(Str::random(10));
         return match ($type) {
-            'module' => "EWMOD-{$moduleId}-{$userId}-{$rand}",
-            'path'   => "EWPATH-{$userId}-{$rand}",
-            'expert' => "EWEXP-{$userId}-{$rand}",
-            default  => "EWCERT-{$userId}-{$rand}",
+            'module' => "EW-MOD-{$rand}",
+            'path'   => "EW-PATH-{$rand}",
+            'expert' => "EW-EXP-{$rand}",
+            default  => "EW-CERT-{$rand}",
         };
     }
 }

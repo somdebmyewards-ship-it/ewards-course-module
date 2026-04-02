@@ -27,7 +27,7 @@ class CertificateAdminController extends Controller
                 [
                     'issued_at' => now(),
                     'enabled_by_admin' => true,
-                    'certificate_code' => 'EWMOD-' . $moduleId . '-' . $userId . '-' . Str::random(6),
+                    'certificate_code' => 'EW-MOD-' . strtoupper(Str::random(10)),
                 ]
             );
         } elseif ($certificateType === 'path') {
@@ -44,7 +44,7 @@ class CertificateAdminController extends Controller
                 [
                     'issued_at' => now(),
                     'enabled_by_admin' => true,
-                    'certificate_code' => 'EWPATH-' . $userId . '-' . Str::random(6),
+                    'certificate_code' => 'EW-PATH-' . strtoupper(Str::random(10)),
                 ]
             );
         } elseif ($certificateType === 'expert') {
@@ -58,7 +58,7 @@ class CertificateAdminController extends Controller
                 [
                     'issued_at' => now(),
                     'enabled_by_admin' => true,
-                    'certificate_code' => 'EWEXP-' . $userId . '-' . Str::random(6),
+                    'certificate_code' => 'EW-EXP-' . strtoupper(Str::random(10)),
                 ]
             );
         } else {

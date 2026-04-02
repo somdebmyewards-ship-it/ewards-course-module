@@ -13,21 +13,24 @@ class ChunkUploadController extends Controller
     /**
      * Receive a single chunk and write it to a temp directory.
      */
+    // B4: Chunk uploads are strictly for video files only
+    private const ALLOWED_VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi'];
+    private const ALLOWED_VIDEO_MIMETYPES  = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'];
+
     public function storeChunk(Request $request)
     {
         $request->validate([
-            'chunk'        => 'required|file|max:10240', // B4: 10MB per chunk max
+            'chunk'        => 'required|file|max:10240|mimetypes:video/mp4,video/webm,video/quicktime,video/x-msvideo,application/octet-stream',
             'upload_id'    => 'required|string|max:100',
             'chunk_index'  => 'required|integer|min:0',
             'total_chunks' => 'required|integer|min:1|max:500',
             'filename'     => 'required|string|max:255',
         ]);
 
-        // B4: Validate filename extension against allowed types
+        // B4: Validate filename extension — video files only for chunk uploads
         $ext = strtolower(pathinfo($request->input('filename'), PATHINFO_EXTENSION));
-        $allowedTypes = config('lms.upload_allowed_types', ['mp4','webm','mov','avi','pdf','png','jpg','jpeg','gif']);
-        if (!in_array($ext, $allowedTypes)) {
-            return response()->json(['message' => "File type .{$ext} is not allowed."], 422);
+        if (!in_array($ext, self::ALLOWED_VIDEO_EXTENSIONS)) {
+            return response()->json(['message' => "Only video files (mp4, webm, mov, avi) are allowed for chunk upload. Got: .{$ext}"], 422);
         }
 
         $uploadId = preg_replace('/[^a-zA-Z0-9_\-]/', '', $request->input('upload_id'));
@@ -64,11 +67,10 @@ class ChunkUploadController extends Controller
         $ext       = strtolower(pathinfo($filename, PATHINFO_EXTENSION)) ?: 'mp4';
         $finalName = uniqid('vid_', true) . '.' . $ext;
 
-        // B4: Validate allowed file types
-        $allowedTypes = config('lms.upload_allowed_types', ['mp4','webm','mov','avi','pdf','png','jpg','jpeg','gif']);
-        if (!in_array($ext, $allowedTypes)) {
+        // B4: Validate allowed file types — video only for chunk uploads
+        if (!in_array($ext, self::ALLOWED_VIDEO_EXTENSIONS)) {
             Storage::disk('local')->deleteDirectory("chunks/{$uploadId}");
-            return response()->json(['message' => "File type .{$ext} is not allowed."], 422);
+            return response()->json(['message' => "Only video files (mp4, webm, mov, avi) are allowed for chunk upload. Got: .{$ext}"], 422);
         }
 
         // Merge chunks into a temp file

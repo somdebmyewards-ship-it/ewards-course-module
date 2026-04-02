@@ -17,9 +17,8 @@ class CertificateController extends Controller
         $userId = $request->user()->id;
         $user = $request->user();
 
-        // H5: Auto-issue only when user explicitly views certificates page
-        $this->completion->autoIssueMissing($userId);
-
+        // H5: READ-only — no writes on GET endpoints.
+        // Certificates are issued exclusively via CompletionService::checkAndComplete()
         $certs = Certificate::where('user_id', $userId)->get();
 
         if ($certs->isEmpty()) {
@@ -66,9 +65,7 @@ class CertificateController extends Controller
     {
         $userId = $user->id;
 
-        // H5: Auto-issue only on explicit download action
-        $this->completion->autoIssueMissing($userId);
-
+        // H5: READ-only — no writes on download. Certs issued via completion flow only.
         $query = Certificate::where('user_id', $userId);
         if ($certId) {
             $query->where('id', $certId);

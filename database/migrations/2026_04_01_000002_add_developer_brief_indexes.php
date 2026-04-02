@@ -16,10 +16,8 @@ return new class extends Migration
             $table->index(['user_id', 'module_id'], 'bk_user_module_idx');
         });
 
-        // Certificates: user_id + certificate_type (common lookup)
-        Schema::table('lms_certificates', function (Blueprint $table) {
-            $table->index(['user_id', 'certificate_type'], 'cert_user_type_idx');
-        });
+        // Certificates: composite unique already exists via cert_user_type_module
+        // Redundant non-unique index removed — covered by the unique composite.
 
         // Quiz attempts: user_id + module_id (analytics queries)
         Schema::table('lms_quiz_attempts', function (Blueprint $table) {
@@ -42,9 +40,7 @@ return new class extends Migration
         Schema::table('lms_bookmarks', function (Blueprint $table) {
             $table->dropIndex('bk_user_module_idx');
         });
-        Schema::table('lms_certificates', function (Blueprint $table) {
-            $table->dropIndex('cert_user_type_idx');
-        });
+        // cert_user_type_idx no longer created — nothing to drop
         Schema::table('lms_quiz_attempts', function (Blueprint $table) {
             $table->dropIndex('qa_user_module_idx');
         });

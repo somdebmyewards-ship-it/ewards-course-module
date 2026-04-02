@@ -45,9 +45,25 @@ class UserManagementController extends Controller
             'outlet_id' => 'nullable|exists:lms_outlets,id',
         ]);
 
-        // B5: Only existing ADMINs can create new ADMIN users
-        if ($validated['role'] === 'ADMIN' && !$request->user()->isAdmin()) {
-            return response()->json(['message' => 'Only admins can create admin users'], 403);
+        // B5: ADMIN role creation requires admin + password re-confirmation
+        if ($validated['role'] === 'ADMIN') {
+            if (!$request->user()->isAdmin()) {
+                return response()->json(['message' => 'Only admins can create admin users'], 403);
+            }
+
+            // Require password confirmation for elevated privilege action
+            $request->validate([
+                'confirm_password' => 'required|string',
+            ]);
+
+            if (!Hash::check($request->input('confirm_password'), $request->user()->password)) {
+                return response()->json(['message' => 'Password confirmation failed. Re-enter your password to create an ADMIN user.'], 403);
+            }
+
+            AuditLog::record('admin.create_attempt', $request->user()->id, 'user', null, [
+                'target_role' => 'ADMIN',
+                'target_email' => $validated['email'],
+            ]);
         }
 
         $user = User::create([
