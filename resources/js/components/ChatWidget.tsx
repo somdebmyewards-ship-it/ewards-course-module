@@ -268,10 +268,12 @@ export default function ChatWidget() {
   const [loadingStage, setLoadingStage]   = useState(0);
   const [showGreeting, setShowGreeting]   = useState(false);
   const [greetingDone, setGreetingDone]   = useState(false);
-  const bottomRef   = useRef<HTMLDivElement>(null);
-  const inputRef    = useRef<HTMLInputElement>(null);
-  const navigate    = useNavigate();
-  const stageTimer  = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const bottomRef    = useRef<HTMLDivElement>(null);
+  const scrollRef    = useRef<HTMLDivElement>(null);
+  const inputRef     = useRef<HTMLInputElement>(null);
+  const navigate     = useNavigate();
+  const stageTimer   = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const scrollLock   = useRef(false);
 
   // Greeting popup
   useEffect(() => {
@@ -282,9 +284,29 @@ export default function ChatWidget() {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
+  // Smooth scroll to bottom — debounced to prevent rapid glitchy jumps
+  const scrollToBottom = useCallback((instant?: boolean) => {
+    if (scrollLock.current) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    scrollLock.current = true;
+    requestAnimationFrame(() => {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: instant ? 'instant' : 'smooth',
+      });
+      // Release lock after animation settles
+      setTimeout(() => { scrollLock.current = false; }, instant ? 50 : 350);
+    });
+  }, []);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+    // Only auto-scroll if user is near the bottom (within 120px)
+    const el = scrollRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    if (nearBottom) scrollToBottom();
+  }, [messages, loading, scrollToBottom]);
 
   useEffect(() => {
     if (open) {
@@ -315,6 +337,8 @@ export default function ChatWidget() {
     setInput('');
     setLoading(true);
     setLoadingStage(0);
+    // Instant scroll to show the user's message immediately
+    setTimeout(() => scrollToBottom(true), 30);
 
     try {
       const res = await api.post('/chatbot/ask', {
@@ -539,10 +563,11 @@ export default function ChatWidget() {
           </div>
 
           {/* Messages */}
-          <div style={{
+          <div ref={scrollRef} style={{
             flex: 1, overflowY: 'auto', padding: '16px',
             display: 'flex', flexDirection: 'column', gap: 14,
             background: '#f7f4fc',
+            scrollBehavior: 'smooth',
           }}>
             {messages.length === 0 && (
               <div style={{ textAlign: 'center', padding: '24px 12px', animation: 'elaFadeIn 0.4s ease' }}>
