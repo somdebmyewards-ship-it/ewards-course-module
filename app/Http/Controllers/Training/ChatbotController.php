@@ -274,66 +274,121 @@ class ChatbotController extends Controller
     /**
      * Detect greetings and small-talk — respond instantly without retrieval.
      * Uses regex patterns so variations like "hiii", "how r u?", "heyy" all match.
+     * Also catches acknowledgments, reactions, nonsense, and very short non-queries.
      * Returns a response payload or null if the question is a real query.
      */
     private function detectGreeting(string $question): ?array
     {
-        $q = strtolower(trim(preg_replace('/[^a-z0-9\s]/i', '', $question)));
+        $q = strtolower(trim(preg_replace('/[^a-z0-9\s]/i', ' ', $question)));
+        $q = preg_replace('/\s+/', ' ', trim($q)); // normalize multiple spaces
 
-        // Short inputs (< 4 words) that don't contain eWards-related keywords are likely small talk
         $wordCount = str_word_count($q);
-        $hasKeyword = (bool) preg_match('/\b(ewards|campaign|instant|pass|coupon|reward|report|dashboard|customer|upload|whatsapp|module|quiz|checklist|section|analytics|otp|qr)\b/i', $q);
 
-        // If it contains a domain keyword, it's a real query — skip greeting detection
+        // Domain keywords — if present, it's a real eWards query, skip detection
+        $hasKeyword = (bool) preg_match('/\b(ewards|campaign|instant|pass|coupon|reward|report|dashboard|customer|upload|whatsapp|module|quiz|checklist|section|analytics|otp|qr|loyalty|merchant|outlet|billing|scan|redeem|points|sms|crm|segment|audience|notification|push|offer|discount|voucher|referral|feedback|store|brand)\b/i', $q);
         if ($hasKeyword) return null;
 
-        // ── Greetings: hi, hello, hey, good morning, etc. ──
-        $greetingPatterns = [
-            '/^h+i+$/i',                                    // hi, hii, hiii, hiiii
-            '/^he+y+$/i',                                   // hey, heyy, heyyy
-            '/^hello+$/i',                                  // hello, helloo
-            '/^(hi|hey|hello)\s+(there|ela|buddy|friend)/i',// hi there, hello ela
-            '/^(good\s+)?(morning|afternoon|evening|night|day)/i', // good morning, morning
-            '/^(sup|yo|howdy|hola|namaste|ola|namaskar)/i', // sup, yo, howdy
-            '/^(whats?\s*up|wassup|whaddup)/i',             // whats up, wassup
+        // Question words with real intent — skip detection
+        // (but "how are you" / "what is your name" are small talk, handled below)
+        $realQuestionPatterns = [
+            '/^(how|what|why|when|where|which|can|does|do|is|will|should)\b.{15,}/i',
         ];
-
-        // ── How are you / conversational ──
-        $conversationPatterns = [
-            '/^how\s+(are|r)\s+(you|u|ya)/i',               // how are you, how r u
-            '/^how\s+(do|ya|you)\s+do/i',                   // how do you do
-            '/^(hows|how\s*is)\s+(it\s+going|everything|life|things)/i', // hows it going
-            '/^(im|i\s*am)\s+(good|fine|great|okay|ok)/i',  // im good, i am fine
-            '/^(whats?\s+going\s+on|what\s+is\s+up)/i',     // whats going on
-            '/^(nice|pleased)\s+to\s+meet/i',               // nice to meet you
-        ];
-
-        // ── Thanks ──
-        $thanksPatterns = [
-            '/^than(k|x|ks)/i',                             // thanks, thanx, thank you
-            '/^(ty|thx|thnx|thnks)/i',                      // ty, thx
-            '/^(appreciate|much\s+appreciated)/i',           // appreciate it
-            '/^(great|awesome|perfect|cool|nice)(\s+thanks)?$/i', // great, awesome thanks
-        ];
-
-        // ── Goodbye ──
-        $byePatterns = [
-            '/^(bye|byebye|bye\s*bye|goodbye|good\s*bye)/i',// bye, goodbye
-            '/^(see\s+(you|ya|u)|cya|later|laterz)/i',      // see you, cya
-            '/^(take\s+care|gotta\s+go|gtg|ttyl)/i',        // take care, gtg
-        ];
-
-        // ── Meta: who are you, help ──
-        $metaPatterns = [
-            '/^who\s+(are|r)\s+(you|u)/i',                   // who are you
-            '/^what\s+(are|r)\s+(you|u)/i',                  // what are you
-            '/^what(s|\s+is)\s+your\s+name/i',               // whats your name
-            '/^what\s+(can|do)\s+(you|u)\s+(do|help)/i',     // what can you do
-            '/^(help|help\s+me)$/i',                         // help, help me
-            '/^(tell\s+me\s+about\s+yourself)/i',            // tell me about yourself
-        ];
+        foreach ($realQuestionPatterns as $p) {
+            if (preg_match($p, $q)) {
+                // Long question without domain keywords — let retrieval handle it
+                // Exception: conversational patterns caught below
+            }
+        }
 
         $suggestions = $this->defaultSuggestions();
+
+        // ── 1. Greetings: hi, hello, hey, good morning, etc. ──
+        $greetingPatterns = [
+            '/^h+i+$/i',                                        // hi, hii, hiii
+            '/^he+y+$/i',                                       // hey, heyy
+            '/^hel+o+$/i',                                      // hello, helloo, helllo
+            '/^(hi|hey|hello|hola)\s+(there|ela|buddy|friend|dear|bro|man|dude|sir|maam|madam)/i',
+            '/^(good\s*)?(morning|afternoon|evening|night|day)/i',
+            '/^(sup|yo+|howdy|hola|namaste|ola|namaskar|salaam|salam)/i',
+            '/^(whats?\s*up|wassup|whaddup|waddup)/i',
+            '/^(greetings|salutations)/i',
+        ];
+
+        // ── 2. How are you / conversational ──
+        $conversationPatterns = [
+            '/^how\s+(are|r)\s+(you|u|ya|yall)/i',
+            '/^how\s+(do|ya|you)\s+do/i',
+            '/^how\s+(have\s+you\s+been|you\s+doing|you\s+been)/i',
+            '/^(hows|how\s*is)\s+(it\s+going|everything|life|things|your\s+day)/i',
+            '/^(whats?\s+going\s+on|what\s+is\s+up)/i',
+            '/^(nice|pleased|glad)\s+to\s+meet/i',
+            '/^(long\s+time|missed\s+you)/i',
+        ];
+
+        // ── 3. Acknowledgments: ok, yes, no, got it, I see ──
+        $ackPatterns = [
+            '/^(ok+|okay+|k+|okie|okk+|alright|aight|right|sure|yep|yup|ya|yaa|yeah+|yes+|yess+|yea|yah)$/i',
+            '/^(no+|nah+|nope|noo+|naah)$/i',
+            '/^(got\s+it|i\s+see|i\s+understand|understood|makes\s+sense|noted|roger|copy|fine)$/i',
+            '/^(i\s+know|i\s+get\s+it|thats?\s+(right|correct|true))$/i',
+            '/^(of\s+course|obviously|definitely|absolutely|certainly|sure\s+thing)$/i',
+            '/^(hmm+|hm+|umm+|um+|ahh*|ohh*|ooh+|ugh|meh|eh)$/i',
+        ];
+
+        // ── 4. Reactions: nice, cool, wow, lol, haha ──
+        $reactionPatterns = [
+            '/^(nice|cool|awesome|amazing|great|wonderful|fantastic|brilliant|excellent|superb|sweet|dope|lit|fire|sick)$/i',
+            '/^(wow+|whoa+|omg|oh\s*my\s*god|oh\s+wow|damn|dang|woah)$/i',
+            '/^(lo+l+|lmao|lmfao|rofl|ha+h?a*|he+h?e*|heh+|ja+j?a*)$/i',
+            '/^(interesting|really|seriously|no\s+way|for\s+real|true|legit)$/i',
+            '/^(good|bad|sad|happy|yay+|woo+|hurray|hooray)$/i',
+        ];
+
+        // ── 5. Thanks ──
+        $thanksPatterns = [
+            '/^than(k|x|ks)/i',
+            '/^(ty|thx|thnx|thnks|tysm|tyvm)/i',
+            '/^(appreciate|much\s+appreciated)/i',
+            '/^(cheers|ta|gracias|dhanyawad|shukriya)/i',
+        ];
+
+        // ── 6. Goodbye ──
+        $byePatterns = [
+            '/^(bye+|byebye|bye\s*bye|goodbye|good\s*bye)/i',
+            '/^(see\s+(you|ya|u)|cya|later+z?|peace)/i',
+            '/^(take\s+care|gotta\s+go|gtg|ttyl|brb|bbl)/i',
+            '/^(good\s*night|gn|nighty?\s*night)/i',
+        ];
+
+        // ── 7. Meta: who are you, help, what can you do ──
+        $metaPatterns = [
+            '/^who\s+(are|r)\s+(you|u)/i',
+            '/^what\s+(are|r)\s+(you|u)/i',
+            '/^what(s|\s+is)\s+your\s+name/i',
+            '/^what\s+(can|do)\s+(you|u)\s+(do|help|know)/i',
+            '/^(help|help\s+me|i\s+need\s+help)$/i',
+            '/^(tell\s+me\s+about\s+yourself|introduce\s+yourself)/i',
+            '/^(are\s+you\s+(a\s+)?(bot|ai|robot|human|real|machine))/i',
+            '/^(can\s+you\s+help\s+me|i\s+have\s+a\s+question)$/i',
+        ];
+
+        // ── 8. Filler / nonsense / too-short ──
+        $fillerPatterns = [
+            '/^(test|testing|hello\s+world|asdf|asd|qwerty|abc|xyz|foo|bar|blah+)$/i',
+            '/^(nothing|never\s*mind|nvm|forget\s+it|skip|ignore|idk|dunno)$/i',
+            '/^(what|huh|eh|wait|so|and|but|well|anyway|hmm)$/i',
+            '/^[a-z]{1,2}$/i',                                // single letter or 2 letters: "a", "ok", "hi" already handled
+            '/^(.)\1{2,}$/i',                                  // repeated chars: "aaa", "zzz", "sss"
+            '/^(oh\s+ok|ah\s+ok|oh\s+i\s+see|oh\s+right|oh\s+alright|i\s+see|is\s+it)/i',
+        ];
+
+        // ── 9. Personal state: im bored, im tired, etc. ──
+        $personalPatterns = [
+            '/^(im|i\s*am|i\s+feel)\s+(good|fine|great|okay|ok|bored|tired|confused|lost|happy|sad|excited|curious|sleepy|hungry)/i',
+            '/^(feeling|i\s+feel)\s+(good|fine|great|bored|tired|confused|lost|happy|sad)/i',
+        ];
+
+        // ── Match and respond ──
 
         foreach ($greetingPatterns as $p) {
             if (preg_match($p, $q)) {
@@ -350,6 +405,28 @@ class ChatbotController extends Controller
             if (preg_match($p, $q)) {
                 return [
                     'answer'       => "I'm doing great, thanks for asking! 😊 I'm **Ela**, always ready to help you learn the eWards platform. What would you like to know about?",
+                    'sources'      => [],
+                    'suggestions'  => $suggestions,
+                    'answer_found' => true,
+                ];
+            }
+        }
+
+        foreach ($ackPatterns as $p) {
+            if (preg_match($p, $q)) {
+                return [
+                    'answer'       => "Got it! 👍 If you have any questions about the eWards platform, just ask away!",
+                    'sources'      => [],
+                    'suggestions'  => $suggestions,
+                    'answer_found' => true,
+                ];
+            }
+        }
+
+        foreach ($reactionPatterns as $p) {
+            if (preg_match($p, $q)) {
+                return [
+                    'answer'       => "Glad to hear it! 😄 Is there anything about eWards you'd like to learn more about?",
                     'sources'      => [],
                     'suggestions'  => $suggestions,
                     'answer_found' => true,
@@ -388,6 +465,38 @@ class ChatbotController extends Controller
                     'answer_found' => true,
                 ];
             }
+        }
+
+        foreach ($fillerPatterns as $p) {
+            if (preg_match($p, $q)) {
+                return [
+                    'answer'       => "I'm here to help! 💡 Try asking me something about the eWards platform — like how campaigns work, or what Instant Pass does.",
+                    'sources'      => [],
+                    'suggestions'  => $suggestions,
+                    'answer_found' => true,
+                ];
+            }
+        }
+
+        foreach ($personalPatterns as $p) {
+            if (preg_match($p, $q)) {
+                return [
+                    'answer'       => "Hope you're having a good day! 😊 Whenever you're ready, I can help you learn about eWards features. What would you like to explore?",
+                    'sources'      => [],
+                    'suggestions'  => $suggestions,
+                    'answer_found' => true,
+                ];
+            }
+        }
+
+        // ── Fallback: very short input (1-2 words) without domain keywords ──
+        if ($wordCount <= 2 && !$hasKeyword && strlen($q) <= 15) {
+            return [
+                'answer'       => "I'm here to help! 💡 Try asking me about eWards features — like campaigns, Instant Pass, rewards, or customer management.",
+                'sources'      => [],
+                'suggestions'  => $suggestions,
+                'answer_found' => true,
+            ];
         }
 
         return null; // Not small talk — proceed with normal retrieval
