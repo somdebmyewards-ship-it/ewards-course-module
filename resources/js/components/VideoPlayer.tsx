@@ -38,7 +38,7 @@ const VideoPlayer = ({ url: rawUrl, style }: { url: string; style?: React.CSSPro
     return (
       <video
         controls
-        style={{ width: '100%', display: 'block' }}
+        style={{ width: '100%', maxHeight: '70vh', display: 'block', aspectRatio: '16 / 9', objectFit: 'contain', background: '#000' }}
         src={url}
         onError={(e) => {
           const parent = (e.target as HTMLElement).parentElement;

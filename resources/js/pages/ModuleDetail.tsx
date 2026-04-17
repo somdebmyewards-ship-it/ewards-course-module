@@ -719,7 +719,7 @@ export default function ModuleDetail() {
                     <PlayCircleOutlined style={{ color: '#6B2FA0', fontSize: 18 }} />
                     <span style={{ fontSize: 16, fontWeight: 700, color: '#1a0933' }}>Introductory Video</span>
                   </div>
-                  <div style={{ position: 'relative', background: '#000', overflow: 'hidden', borderRadius: 0 }}>
+                  <div style={{ position: 'relative', background: '#000', borderRadius: 0 }}>
                     <VideoPlayer url={mod.video_url} />
                   </div>
                   {/* Images + Documents if any */}
@@ -819,7 +819,7 @@ export default function ModuleDetail() {
                   <div style={{ padding: '22px 32px 28px' }}>
                     {/* 1. Section Video (always first) */}
                     {currentSection.video_url && (
-                      <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', background: '#000' }}>
+                      <div style={{ marginBottom: 20, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', background: '#000' }}>
                         <VideoPlayer url={currentSection.video_url} />
                       </div>
                     )}

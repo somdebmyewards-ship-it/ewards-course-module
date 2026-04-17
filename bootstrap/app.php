@@ -5,6 +5,9 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
+    ->withProviders([
+        \App\Providers\AppServiceProvider::class,
+    ])
     ->withRouting(
         api: __DIR__ . '/../routes/api.php',
         apiPrefix: 'api/v1',
@@ -21,10 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust proxies (Render, Cloudflare, etc.)
         $middleware->trustProxies(at: '*');
 
-        // API middleware stack
-        $middleware->api(prepend: [
-            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
-        ]);
+        // API middleware stack — per-route throttle applied where needed
+        // (chatbot: throttle:15,1 — assistant: throttle:10,1)
 
         // Custom middleware aliases
         $middleware->alias([

@@ -12,8 +12,7 @@ return new class extends Migration
         // The earlier migration (2026_03_28) created 'cert_user_type_module' on the old table.
         // After rename to lms_certificates, that index still exists. Only create if missing.
         if (Schema::hasTable('lms_certificates')) {
-            $sm = Schema::getConnection()->getDoctrineSchemaManager();
-            $indexes = collect($sm->listTableIndexes('lms_certificates'))->keys()->toArray();
+            $indexes = collect(Schema::getIndexes('lms_certificates'))->pluck('name')->toArray();
 
             // If the old index name exists (from 2026_03_28 rename), we're covered
             $hasComposite = in_array('cert_user_type_module', $indexes)
@@ -72,8 +71,7 @@ return new class extends Migration
     {
         // Drop whichever composite unique index exists
         if (Schema::hasTable('lms_certificates')) {
-            $sm = Schema::getConnection()->getDoctrineSchemaManager();
-            $indexes = collect($sm->listTableIndexes('lms_certificates'))->keys()->toArray();
+            $indexes = collect(Schema::getIndexes('lms_certificates'))->pluck('name')->toArray();
 
             if (in_array('lms_certs_user_type_module_unique', $indexes)) {
                 Schema::table('lms_certificates', function (Blueprint $table) {
