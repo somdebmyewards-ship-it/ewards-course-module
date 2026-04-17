@@ -46,6 +46,12 @@ class ChatbotController extends Controller
         }
         RateLimiter::hit($rlKey, 60);
 
+        // Handle greetings / small-talk without hitting the retrieval pipeline
+        $greeting = $this->detectGreeting($question);
+        if ($greeting) {
+            return response()->json($greeting);
+        }
+
         // Cache identical single-turn questions for 6 hours
         $cacheKey = 'ela_answer:' . md5(strtolower($question));
         if (empty($history) && ($cached = Cache::get($cacheKey))) {
@@ -263,5 +269,73 @@ class ChatbotController extends Controller
             'How do I create a campaign?',
             'What is customer upload?',
         ];
+    }
+
+    /**
+     * Detect greetings and small-talk — respond instantly without retrieval.
+     * Returns a response payload or null if the question is a real query.
+     */
+    private function detectGreeting(string $question): ?array
+    {
+        $q = strtolower(trim(preg_replace('/[^a-z0-9\s]/i', '', $question)));
+
+        $greetings = [
+            'hi', 'hello', 'hey', 'hii', 'hiii', 'hiiii', 'hola', 'namaste',
+            'good morning', 'good afternoon', 'good evening', 'good night',
+            'sup', 'yo', 'whats up', 'wassup', 'howdy',
+        ];
+
+        $thanks = [
+            'thanks', 'thank you', 'thankyou', 'thx', 'ty', 'thanks a lot',
+            'thank you so much', 'appreciate it', 'great thanks',
+        ];
+
+        $byes = [
+            'bye', 'goodbye', 'see you', 'later', 'bye bye', 'cya',
+            'take care', 'gotta go',
+        ];
+
+        $meta = [
+            'who are you', 'what are you', 'whats your name', 'what is your name',
+            'what can you do', 'help', 'help me',
+        ];
+
+        if (in_array($q, $greetings) || in_array($q, ['hi there', 'hello there', 'hey there'])) {
+            return [
+                'answer'       => "Hey there! 👋 I'm **Ela**, your eWards learning assistant. I can help you understand any feature — campaigns, Instant Pass, customer management, rewards, and more. What would you like to learn about?",
+                'sources'      => [],
+                'suggestions'  => $this->defaultSuggestions(),
+                'answer_found' => true,
+            ];
+        }
+
+        if (in_array($q, $thanks) || str_starts_with($q, 'thanks') || str_starts_with($q, 'thank')) {
+            return [
+                'answer'       => "You're welcome! 😊 Happy to help. Feel free to ask me anything else about the eWards platform!",
+                'sources'      => [],
+                'suggestions'  => $this->defaultSuggestions(),
+                'answer_found' => true,
+            ];
+        }
+
+        if (in_array($q, $byes)) {
+            return [
+                'answer'       => "See you later! 👋 Whenever you need help with eWards, I'm just a click away. Happy learning!",
+                'sources'      => [],
+                'suggestions'  => [],
+                'answer_found' => true,
+            ];
+        }
+
+        if (in_array($q, $meta)) {
+            return [
+                'answer'       => "I'm **Ela** — your AI learning assistant for the eWards platform! 🤖\n\nI can help you with:\n- **Instant Pass** — how customers join via WhatsApp\n- **Campaigns** — creating and managing promotional campaigns\n- **Customer Upload** — importing customer data via CSV\n- **Rewards & Coupons** — setting up loyalty rewards\n- **Reports** — understanding analytics and metrics\n\nJust ask me anything!",
+                'sources'      => [],
+                'suggestions'  => $this->defaultSuggestions(),
+                'answer_found' => true,
+            ];
+        }
+
+        return null; // Not a greeting — proceed with normal retrieval
     }
 }
