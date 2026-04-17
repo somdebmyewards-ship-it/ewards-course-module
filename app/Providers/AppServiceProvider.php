@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\AI\RetrievalService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -23,6 +24,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Auto-inject raw query text into RetrievalService for hybrid BM25 search.
+        // This lets the service access the user's question without changing any controllers.
+        $this->app->resolving(RetrievalService::class, function (RetrievalService $service) {
+            $question = request()->input('question', '');
+            if (is_string($question) && trim($question) !== '') {
+                $service->forQuery(trim($question));
+            }
+        });
+
         // Use custom PersonalAccessToken with lms_ table prefix
         Sanctum::usePersonalAccessTokenModel(\App\Models\PersonalAccessToken::class);
 
