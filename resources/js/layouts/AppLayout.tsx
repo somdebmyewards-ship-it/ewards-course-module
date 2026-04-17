@@ -108,7 +108,7 @@ export default function AppLayout() {
     return (
       <Layout style={{ minHeight: '100vh' }}>
         <Header style={{
-          background: '#fff', padding: '0 24px', height: 52,
+          background: '#fff', padding: '0 24px', height: 44, lineHeight: '44px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           borderBottom: '1px solid #f0f0f0', position: 'sticky', top: 0, zIndex: 100,
         }}>
@@ -126,7 +126,7 @@ export default function AppLayout() {
             </Dropdown>
           </div>
         </Header>
-        <Content style={{ padding: '16px 24px', background: '#f5f5f5', minHeight: 'calc(100vh - 52px)' }}>
+        <Content style={{ padding: '10px 24px', background: '#f5f5f5', minHeight: 'calc(100vh - 44px)' }}>
           <Outlet />
         </Content>
       </Layout>

@@ -279,7 +279,7 @@ export default function ModuleDetail() {
       {/* Header — Compact bar with integrated section navigation */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 0', marginBottom: 18, borderBottom: '1px solid #e8e8e8',
+        padding: '6px 0', marginBottom: 8, borderBottom: '1px solid #e8e8e8',
         gap: 10,
       }}>
         {/* Left: Back + title */}
@@ -406,7 +406,7 @@ export default function ModuleDetail() {
             overflow: 'auto',
             maxHeight: 'calc(100vh - 130px)',
             position: 'sticky',
-            top: 72,
+            top: 58,
             border: '1px solid #ede8f5',
             boxShadow: '0 4px 24px rgba(107,47,160,0.08), 0 1px 4px rgba(0,0,0,0.04)',
             flexShrink: 0,
@@ -622,82 +622,95 @@ export default function ModuleDetail() {
           </div>
 
           {/* ── PROTOTYPE PRACTICE CARD ── */}
-          {hasPrototype && (
+          {hasPrototype && (() => {
+            const protoCompleted = !!progress?.prototype_completed;
+            const protoClickable = step >= 1 || protoCompleted || allChecklistDone;
+            const protoActive = step === 1;
+            const protoDone = protoCompleted || step >= 2;
+            return (
             <div style={{ padding: '0 8px 6px' }}>
               <div
-                onClick={() => { if (step >= 1 && allChecklistDone) { localStorage.setItem(`module_step_${slug}`, '1'); setStep(1); } }}
+                onClick={() => { if (protoClickable) { localStorage.setItem(`module_step_${slug}`, '1'); setStep(1); } }}
                 style={{
                   borderRadius: 12, padding: '14px 14px',
-                  cursor: step >= 1 && allChecklistDone ? 'pointer' : 'default',
+                  cursor: protoClickable ? 'pointer' : 'default',
                   transition: 'all 0.25s ease',
-                  background: step === 1
+                  background: protoActive
                     ? 'linear-gradient(135deg, #6B2FA0, #9B59B6)'
-                    : step >= 2
+                    : protoDone
                       ? '#f9f5ff'
                       : '#fafafa',
-                  border: step === 1 ? 'none' : step >= 2 ? '1px solid #d3adf7' : '1px solid #f0f0f0',
-                  opacity: allChecklistDone || step >= 1 ? 1 : 0.5,
+                  border: protoActive ? 'none' : protoDone ? '1px solid #d3adf7' : '1px solid #f0f0f0',
+                  opacity: protoClickable ? 1 : 0.5,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{
                     width: 32, height: 32, borderRadius: 10, flexShrink: 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
-                    background: step === 1 ? 'rgba(255,255,255,0.2)' : step >= 2 ? '#6B2FA0' : '#e8e8e8',
-                    color: step >= 1 ? '#fff' : '#bbb',
+                    background: protoActive ? 'rgba(255,255,255,0.2)' : protoDone ? '#6B2FA0' : '#e8e8e8',
+                    color: protoActive || protoDone ? '#fff' : '#bbb',
                   }}>
-                    {progress?.prototype_completed ? '✓' : '🎮'}
+                    {protoCompleted ? '✓' : '🎮'}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: step === 1 ? '#fff' : step >= 2 ? '#6B2FA0' : '#333' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: protoActive ? '#fff' : protoDone ? '#6B2FA0' : '#333' }}>
                       Hands-on Practice
                     </div>
-                    <div style={{ fontSize: 11, color: step === 1 ? 'rgba(255,255,255,0.7)' : step >= 2 ? '#9B59B6' : '#aaa', marginTop: 1 }}>
-                      {progress?.prototype_completed ? 'Completed ✓' : step >= 1 ? (mod.prototype_url ? 'Interactive practice · +30 pts' : `${mod.prototype_config?.flows?.length || 0} flows · +${mod.prototype_config?.points_reward || 30} pts`) : 'Complete lessons first'}
+                    <div style={{ fontSize: 11, color: protoActive ? 'rgba(255,255,255,0.7)' : protoDone ? '#9B59B6' : '#aaa', marginTop: 1 }}>
+                      {protoCompleted ? 'Completed ✓' : protoClickable ? (mod.prototype_url ? 'Interactive practice' : `${mod.prototype_config?.flows?.length || 0} flows · +${mod.prototype_config?.points_reward || 30} pts`) : 'Complete lessons first'}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* ── QUIZ CARD ── */}
-          <div style={{ padding: '0 8px 6px' }}>
-            <div
-              onClick={() => { if (step >= 2) { localStorage.setItem(`module_step_${slug}`, '2'); setStep(2); } }}
-              style={{
-                borderRadius: 12, padding: '14px 14px',
-                cursor: step >= 2 ? 'pointer' : 'default',
-                transition: 'all 0.25s ease',
-                background: step === 2
-                  ? 'linear-gradient(135deg, #6B2FA0, #9B59B6)'
-                  : step >= 3
-                    ? '#f9f5ff'
-                    : '#fafafa',
-                border: step === 2 ? 'none' : step >= 3 ? '1px solid #d3adf7' : '1px solid #f0f0f0',
-                opacity: step >= 2 ? 1 : 0.5,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
-                  background: step === 2 ? 'rgba(255,255,255,0.2)' : step >= 3 ? '#6B2FA0' : '#e8e8e8',
-                  color: step >= 2 ? '#fff' : '#bbb',
-                }}>
-                  {step >= 3 ? '✓' : '📝'}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: step === 2 ? '#fff' : step >= 3 ? '#6B2FA0' : '#333' }}>
-                    Knowledge Check
+          {(() => {
+            const quizClickable = step >= 2 || (!!progress?.prototype_completed && allChecklistDone) || !!progress?.quiz_completed;
+            const quizActive = step === 2;
+            const quizDone = step >= 3 || !!progress?.quiz_completed;
+            return (
+            <div style={{ padding: '0 8px 6px' }}>
+              <div
+                onClick={() => { if (quizClickable) { localStorage.setItem(`module_step_${slug}`, '2'); setStep(2); } }}
+                style={{
+                  borderRadius: 12, padding: '14px 14px',
+                  cursor: quizClickable ? 'pointer' : 'default',
+                  transition: 'all 0.25s ease',
+                  background: quizActive
+                    ? 'linear-gradient(135deg, #6B2FA0, #9B59B6)'
+                    : quizDone
+                      ? '#f9f5ff'
+                      : '#fafafa',
+                  border: quizActive ? 'none' : quizDone ? '1px solid #d3adf7' : '1px solid #f0f0f0',
+                  opacity: quizClickable ? 1 : 0.5,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+                    background: quizActive ? 'rgba(255,255,255,0.2)' : quizDone ? '#6B2FA0' : '#e8e8e8',
+                    color: quizActive || quizDone ? '#fff' : '#bbb',
+                  }}>
+                    {quizDone ? '✓' : '📝'}
                   </div>
-                  <div style={{ fontSize: 11, color: step === 2 ? 'rgba(255,255,255,0.7)' : step >= 3 ? '#9B59B6' : '#aaa', marginTop: 1 }}>
-                    {step >= 3 ? 'Passed ✓' : step >= 2 ? `${mod.quizzes?.length || 0} questions · Start` : 'Complete practice first'}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: quizActive ? '#fff' : quizDone ? '#6B2FA0' : '#333' }}>
+                      Knowledge Check
+                    </div>
+                    <div style={{ fontSize: 11, color: quizActive ? 'rgba(255,255,255,0.7)' : quizDone ? '#9B59B6' : '#aaa', marginTop: 1 }}>
+                      {quizDone ? 'Passed ✓' : quizClickable ? `${mod.quizzes?.length || 0} questions · Start` : 'Complete practice first'}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+            );
+          })()}
 
           {/* ── CERTIFICATE CARD ── */}
           <div style={{ padding: '0 8px 14px' }}>
@@ -1127,15 +1140,20 @@ export default function ModuleDetail() {
           {/* PROTOTYPE STEP — iframe for HTML upload, fallback to JSON simulator */}
           {step === 1 && hasPrototype && (
             mod.prototype_url ? (
-              /* HTML-upload prototype: embedded iframe */
-              <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-                <div style={{ background: 'linear-gradient(90deg, #6B2FA0 0%, #9B59B6 50%, #c084fc 100%)', height: 4 }} />
-                <div style={{ padding: '18px 24px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 20 }}>🎮</span>
+              /* HTML-upload prototype: embedded iframe — flex column to fit viewport */
+              <div style={{
+                background: '#fff', borderRadius: 16, border: '1px solid #f0f0f0', overflow: 'hidden',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                display: 'flex', flexDirection: 'column',
+                height: 'calc(100vh - 100px)', maxHeight: 'calc(100vh - 100px)',
+              }}>
+                <div style={{ background: 'linear-gradient(90deg, #6B2FA0 0%, #9B59B6 50%, #c084fc 100%)', height: 4, flexShrink: 0 }} />
+                <div style={{ padding: '10px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 18 }}>🎮</span>
                     <div>
-                      <div style={{ fontSize: 17, fontWeight: 700, color: '#1a0933' }}>Interactive Practice</div>
-                      <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>Complete the hands-on activity below, then mark it as done</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a0933' }}>Interactive Practice</div>
+                      <div style={{ fontSize: 12, color: '#888' }}>Complete the activity below, then mark as done</div>
                     </div>
                   </div>
                   {progress?.prototype_completed && (
@@ -1147,16 +1165,16 @@ export default function ModuleDetail() {
                 <iframe
                   src={mod.prototype_url}
                   sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                  style={{ width: '100%', height: 650, border: 'none', display: 'block' }}
+                  style={{ width: '100%', flex: 1, border: 'none', display: 'block', minHeight: 0 }}
                   title="Interactive Prototype Practice"
                 />
-                <div style={{ padding: '18px 24px', borderTop: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafafa' }}>
+                <div style={{ padding: '10px 20px', borderTop: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafafa', flexShrink: 0 }}>
                   {!progress?.prototype_completed ? (
                     <Button
                       type="primary"
                       size="large"
                       icon={<CheckCircleOutlined />}
-                      style={{ background: '#6B2FA0', borderColor: '#6B2FA0', borderRadius: 10, fontWeight: 600, height: 46, paddingInline: 28 }}
+                      style={{ background: '#6B2FA0', borderColor: '#6B2FA0', borderRadius: 8, fontWeight: 600, height: 38, paddingInline: 20 }}
                       onClick={async () => {
                         try {
                           const res = await api.post(`/progress/${mod.id}/prototype`, { flow_id: 'html_prototype', completed: true });
@@ -1181,7 +1199,7 @@ export default function ModuleDetail() {
                     <Button
                       type="primary"
                       size="large"
-                      style={{ background: '#6B2FA0', borderColor: '#6B2FA0', borderRadius: 10, fontWeight: 600, height: 46, paddingInline: 28 }}
+                      style={{ background: '#6B2FA0', borderColor: '#6B2FA0', borderRadius: 8, fontWeight: 600, height: 38, paddingInline: 20 }}
                       onClick={proceedToQuiz}
                     >
                       Continue to Quiz →
