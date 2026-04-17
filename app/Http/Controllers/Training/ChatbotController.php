@@ -382,10 +382,17 @@ class ChatbotController extends Controller
             '/^(oh\s+ok|ah\s+ok|oh\s+i\s+see|oh\s+right|oh\s+alright|i\s+see|is\s+it)/i',
         ];
 
-        // ── 9. Personal state: im bored, im tired, etc. ──
+        // ── 9. Personal state / sentiments / opinions / complaints ──
         $personalPatterns = [
-            '/^(im|i\s*am|i\s+feel)\s+(good|fine|great|okay|ok|bored|tired|confused|lost|happy|sad|excited|curious|sleepy|hungry)/i',
-            '/^(feeling|i\s+feel)\s+(good|fine|great|bored|tired|confused|lost|happy|sad)/i',
+            '/^(im|i\s*am|i\s+feel)\s+(good|fine|great|okay|ok|bored|tired|confused|lost|happy|sad|excited|curious|sleepy|hungry|angry|frustrated|annoyed)/i',
+            '/^(feeling|i\s+feel)\s+(good|fine|great|bored|tired|confused|lost|happy|sad|angry|frustrated)/i',
+            '/^(i\s+(dont|do\s*not|am\s+not|aint)\s+(like|understand|know|care|want|need|get))/i',  // i dont like, i dont understand
+            '/^(im\s+not|i\s*am\s+not)\s+(liking|understanding|getting|sure|interested|happy)/i',  // im not liking
+            '/^(this\s+is|thats?|its?)\s+(good|bad|great|boring|confusing|hard|easy|cool|nice|awesome|terrible|awful|stupid|useless|amazing|helpful|interesting)/i',
+            '/^(i\s+(like|love|hate|dislike|enjoy|prefer|need|want))\b/i',  // i like, i love, i hate
+            '/^(not\s+(helpful|useful|working|good|great|clear|sure))/i',   // not helpful, not working
+            '/^(sounds?\s+(good|great|fine|cool|interesting|boring))/i',     // sounds good
+            '/^(thats?\s+(all|it|enough|fine|ok|okay|cool))/i',             // thats all, thats it
         ];
 
         // ── Match and respond ──
@@ -481,7 +488,7 @@ class ChatbotController extends Controller
         foreach ($personalPatterns as $p) {
             if (preg_match($p, $q)) {
                 return [
-                    'answer'       => "Hope you're having a good day! 😊 Whenever you're ready, I can help you learn about eWards features. What would you like to explore?",
+                    'answer'       => "I hear you! 😊 I'm best at helping with eWards platform questions. Try asking me about **Instant Pass**, **Campaigns**, **Customer Upload**, or **Rewards** — I'd love to help!",
                     'sources'      => [],
                     'suggestions'  => $suggestions,
                     'answer_found' => true,
@@ -489,16 +496,17 @@ class ChatbotController extends Controller
             }
         }
 
-        // ── Fallback: very short input (1-2 words) without domain keywords ──
-        if ($wordCount <= 2 && !$hasKeyword && strlen($q) <= 15) {
+        // ── Fallback: short input (≤4 words) without domain keywords ──
+        // Catches anything short that slipped through all patterns above
+        if ($wordCount <= 4 && !$hasKeyword) {
             return [
-                'answer'       => "I'm here to help! 💡 Try asking me about eWards features — like campaigns, Instant Pass, rewards, or customer management.",
+                'answer'       => "I'm here to help! 💡 Try asking me about eWards features — like **Instant Pass**, **Campaigns**, **Rewards**, or **Customer Upload**.",
                 'sources'      => [],
                 'suggestions'  => $suggestions,
                 'answer_found' => true,
             ];
         }
 
-        return null; // Not small talk — proceed with normal retrieval
+        return null; // Longer input without domain keywords — let retrieval try
     }
 }

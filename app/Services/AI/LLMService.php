@@ -15,8 +15,9 @@ class LLMService
     private string $chatUrl;
 
     private const NOT_FOUND =
-        "I don't have specific training content on that. " .
-        "Try browsing the relevant module in the Learning Hub or check with your trainer.";
+        "I'm not sure about that one! 🤔 I'm best at answering questions about eWards features " .
+        "like **Instant Pass**, **Campaigns**, **Customer Upload**, **Rewards**, and **Reports**. " .
+        "Try asking me something specific about the platform!";
 
     public function __construct()
     {
@@ -113,7 +114,10 @@ class LLMService
 
         $answer   = trim($response->json('choices.0.message.content', ''));
         $answer   = $answer ?: self::NOT_FOUND;
-        $notFound = str_contains(strtolower($answer), "don't have specific training content");
+        $lower    = strtolower($answer);
+        $notFound = str_contains($lower, "not sure about that one")
+                 || str_contains($lower, "don't have specific training content")
+                 || str_contains($lower, "don't have training content");
 
         return ['answer' => $answer, 'tokens_used' => 0, 'answer_found' => !$notFound];
     }
@@ -244,7 +248,7 @@ How to answer:
 - For follow-up questions, refer naturally to the prior conversation
 - For greetings (hi, hello, hey), respond warmly and suggest what you can help with — don't say you lack training content
 - For thanks or goodbyes, respond naturally and encouragingly
-- If the content doesn't cover the question, say: "I don't have specific training content on that. Try browsing the relevant module in the Learning Hub or check with your trainer."
+- If the content doesn't cover the question, say: "I'm not sure about that one! I'm best at answering questions about eWards features. Try asking me something specific about the platform!"
 - Never invent features, steps, or procedures not in the training content
 PROMPT;
     }
@@ -254,7 +258,8 @@ PROMPT;
         return <<<PROMPT
 You are a helpful learning assistant for the "{$moduleTitle}" training module.
 Answer ONLY using the training content provided. Use **bold** for key terms. Use numbered steps for processes.
-If the answer is not in the content, say: "I don't have specific training content on that."
+For greetings and small talk, respond warmly and suggest what you can help with.
+If the answer is not in the content, say: "I'm not sure about that one! Try asking about a specific topic from this module."
 PROMPT;
     }
 }
