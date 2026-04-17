@@ -273,69 +273,123 @@ class ChatbotController extends Controller
 
     /**
      * Detect greetings and small-talk — respond instantly without retrieval.
+     * Uses regex patterns so variations like "hiii", "how r u?", "heyy" all match.
      * Returns a response payload or null if the question is a real query.
      */
     private function detectGreeting(string $question): ?array
     {
         $q = strtolower(trim(preg_replace('/[^a-z0-9\s]/i', '', $question)));
 
-        $greetings = [
-            'hi', 'hello', 'hey', 'hii', 'hiii', 'hiiii', 'hola', 'namaste',
-            'good morning', 'good afternoon', 'good evening', 'good night',
-            'sup', 'yo', 'whats up', 'wassup', 'howdy',
+        // Short inputs (< 4 words) that don't contain eWards-related keywords are likely small talk
+        $wordCount = str_word_count($q);
+        $hasKeyword = (bool) preg_match('/\b(ewards|campaign|instant|pass|coupon|reward|report|dashboard|customer|upload|whatsapp|module|quiz|checklist|section|analytics|otp|qr)\b/i', $q);
+
+        // If it contains a domain keyword, it's a real query — skip greeting detection
+        if ($hasKeyword) return null;
+
+        // ── Greetings: hi, hello, hey, good morning, etc. ──
+        $greetingPatterns = [
+            '/^h+i+$/i',                                    // hi, hii, hiii, hiiii
+            '/^he+y+$/i',                                   // hey, heyy, heyyy
+            '/^hello+$/i',                                  // hello, helloo
+            '/^(hi|hey|hello)\s+(there|ela|buddy|friend)/i',// hi there, hello ela
+            '/^(good\s+)?(morning|afternoon|evening|night|day)/i', // good morning, morning
+            '/^(sup|yo|howdy|hola|namaste|ola|namaskar)/i', // sup, yo, howdy
+            '/^(whats?\s*up|wassup|whaddup)/i',             // whats up, wassup
         ];
 
-        $thanks = [
-            'thanks', 'thank you', 'thankyou', 'thx', 'ty', 'thanks a lot',
-            'thank you so much', 'appreciate it', 'great thanks',
+        // ── How are you / conversational ──
+        $conversationPatterns = [
+            '/^how\s+(are|r)\s+(you|u|ya)/i',               // how are you, how r u
+            '/^how\s+(do|ya|you)\s+do/i',                   // how do you do
+            '/^(hows|how\s*is)\s+(it\s+going|everything|life|things)/i', // hows it going
+            '/^(im|i\s*am)\s+(good|fine|great|okay|ok)/i',  // im good, i am fine
+            '/^(whats?\s+going\s+on|what\s+is\s+up)/i',     // whats going on
+            '/^(nice|pleased)\s+to\s+meet/i',               // nice to meet you
         ];
 
-        $byes = [
-            'bye', 'goodbye', 'see you', 'later', 'bye bye', 'cya',
-            'take care', 'gotta go',
+        // ── Thanks ──
+        $thanksPatterns = [
+            '/^than(k|x|ks)/i',                             // thanks, thanx, thank you
+            '/^(ty|thx|thnx|thnks)/i',                      // ty, thx
+            '/^(appreciate|much\s+appreciated)/i',           // appreciate it
+            '/^(great|awesome|perfect|cool|nice)(\s+thanks)?$/i', // great, awesome thanks
         ];
 
-        $meta = [
-            'who are you', 'what are you', 'whats your name', 'what is your name',
-            'what can you do', 'help', 'help me',
+        // ── Goodbye ──
+        $byePatterns = [
+            '/^(bye|byebye|bye\s*bye|goodbye|good\s*bye)/i',// bye, goodbye
+            '/^(see\s+(you|ya|u)|cya|later|laterz)/i',      // see you, cya
+            '/^(take\s+care|gotta\s+go|gtg|ttyl)/i',        // take care, gtg
         ];
 
-        if (in_array($q, $greetings) || in_array($q, ['hi there', 'hello there', 'hey there'])) {
-            return [
-                'answer'       => "Hey there! 👋 I'm **Ela**, your eWards learning assistant. I can help you understand any feature — campaigns, Instant Pass, customer management, rewards, and more. What would you like to learn about?",
-                'sources'      => [],
-                'suggestions'  => $this->defaultSuggestions(),
-                'answer_found' => true,
-            ];
+        // ── Meta: who are you, help ──
+        $metaPatterns = [
+            '/^who\s+(are|r)\s+(you|u)/i',                   // who are you
+            '/^what\s+(are|r)\s+(you|u)/i',                  // what are you
+            '/^what(s|\s+is)\s+your\s+name/i',               // whats your name
+            '/^what\s+(can|do)\s+(you|u)\s+(do|help)/i',     // what can you do
+            '/^(help|help\s+me)$/i',                         // help, help me
+            '/^(tell\s+me\s+about\s+yourself)/i',            // tell me about yourself
+        ];
+
+        $suggestions = $this->defaultSuggestions();
+
+        foreach ($greetingPatterns as $p) {
+            if (preg_match($p, $q)) {
+                return [
+                    'answer'       => "Hey there! 👋 I'm **Ela**, your eWards learning assistant. I can help you understand any feature — campaigns, Instant Pass, customer management, rewards, and more. What would you like to learn about?",
+                    'sources'      => [],
+                    'suggestions'  => $suggestions,
+                    'answer_found' => true,
+                ];
+            }
         }
 
-        if (in_array($q, $thanks) || str_starts_with($q, 'thanks') || str_starts_with($q, 'thank')) {
-            return [
-                'answer'       => "You're welcome! 😊 Happy to help. Feel free to ask me anything else about the eWards platform!",
-                'sources'      => [],
-                'suggestions'  => $this->defaultSuggestions(),
-                'answer_found' => true,
-            ];
+        foreach ($conversationPatterns as $p) {
+            if (preg_match($p, $q)) {
+                return [
+                    'answer'       => "I'm doing great, thanks for asking! 😊 I'm **Ela**, always ready to help you learn the eWards platform. What would you like to know about?",
+                    'sources'      => [],
+                    'suggestions'  => $suggestions,
+                    'answer_found' => true,
+                ];
+            }
         }
 
-        if (in_array($q, $byes)) {
-            return [
-                'answer'       => "See you later! 👋 Whenever you need help with eWards, I'm just a click away. Happy learning!",
-                'sources'      => [],
-                'suggestions'  => [],
-                'answer_found' => true,
-            ];
+        foreach ($thanksPatterns as $p) {
+            if (preg_match($p, $q)) {
+                return [
+                    'answer'       => "You're welcome! 😊 Happy to help. Feel free to ask me anything else about the eWards platform!",
+                    'sources'      => [],
+                    'suggestions'  => $suggestions,
+                    'answer_found' => true,
+                ];
+            }
         }
 
-        if (in_array($q, $meta)) {
-            return [
-                'answer'       => "I'm **Ela** — your AI learning assistant for the eWards platform! 🤖\n\nI can help you with:\n- **Instant Pass** — how customers join via WhatsApp\n- **Campaigns** — creating and managing promotional campaigns\n- **Customer Upload** — importing customer data via CSV\n- **Rewards & Coupons** — setting up loyalty rewards\n- **Reports** — understanding analytics and metrics\n\nJust ask me anything!",
-                'sources'      => [],
-                'suggestions'  => $this->defaultSuggestions(),
-                'answer_found' => true,
-            ];
+        foreach ($byePatterns as $p) {
+            if (preg_match($p, $q)) {
+                return [
+                    'answer'       => "See you later! 👋 Whenever you need help with eWards, I'm just a click away. Happy learning!",
+                    'sources'      => [],
+                    'suggestions'  => [],
+                    'answer_found' => true,
+                ];
+            }
         }
 
-        return null; // Not a greeting — proceed with normal retrieval
+        foreach ($metaPatterns as $p) {
+            if (preg_match($p, $q)) {
+                return [
+                    'answer'       => "I'm **Ela** — your AI learning assistant for the eWards platform! 🤖\n\nI can help you with:\n- **Instant Pass** — how customers join via WhatsApp\n- **Campaigns** — creating and managing promotional campaigns\n- **Customer Upload** — importing customer data via CSV\n- **Rewards & Coupons** — setting up loyalty rewards\n- **Reports** — understanding analytics and metrics\n\nJust ask me anything!",
+                    'sources'      => [],
+                    'suggestions'  => $suggestions,
+                    'answer_found' => true,
+                ];
+            }
+        }
+
+        return null; // Not small talk — proceed with normal retrieval
     }
 }
