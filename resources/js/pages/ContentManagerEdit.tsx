@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Card, Tabs, Form, Input, InputNumber, Switch, Button, Space, Spin, message, Popconfirm, Select, Divider, Tag, Checkbox, Row, Col, Badge, Tooltip, Alert, Progress } from 'antd';
-import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, DeleteOutlined, LinkOutlined, SafetyCertificateOutlined, CheckSquareOutlined, EyeOutlined, PlayCircleOutlined, FileTextOutlined, BookOutlined, CheckCircleOutlined, SettingOutlined, OrderedListOutlined, QuestionCircleOutlined, TrophyOutlined, UploadOutlined, ClockCircleOutlined, StarOutlined, EditOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, DeleteOutlined, LinkOutlined, SafetyCertificateOutlined, CheckSquareOutlined, EyeOutlined, PlayCircleOutlined, FileTextOutlined, BookOutlined, CheckCircleOutlined, SettingOutlined, OrderedListOutlined, QuestionCircleOutlined, TrophyOutlined, UploadOutlined, ClockCircleOutlined, StarOutlined, EditOutlined, RobotOutlined } from '@ant-design/icons';
 import api from '@/lib/api';
 
 const { Title, Text, Paragraph } = Typography;
@@ -35,7 +35,7 @@ export default function ContentManagerEdit() {
       'title', 'slug', 'description', 'icon', 'display_order', 'video_url',
       'image_urls', 'document_urls', 'points_reward', 'estimated_minutes',
       'is_published', 'quiz_enabled', 'require_help_viewed', 'require_checklist',
-      'require_quiz', 'certificate_enabled', 'page_route',
+      'require_quiz', 'certificate_enabled', 'page_route', 'prototype_url',
     ];
     const payload: Record<string, any> = {};
     for (const key of allowedKeys) {
@@ -207,6 +207,41 @@ export default function ContentManagerEdit() {
     input.click();
   };
 
+  const handlePrototypeUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.html,.htm';
+    input.onchange = async (ev: any) => {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { message.error('HTML file must be under 10MB'); return; }
+
+      message.loading({ content: 'Uploading prototype HTML...', key: 'proto-upload', duration: 0 });
+
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await api.post('/cm/upload', fd, { timeout: 0 });
+
+        const protoUrl = res.data.url;
+        await api.put(`/cm/modules/${id}`, { prototype_url: protoUrl });
+        fetchModule();
+        message.success({ content: 'Prototype HTML uploaded!', key: 'proto-upload' });
+      } catch (err: any) {
+        message.error({ content: 'Prototype upload failed', key: 'proto-upload' });
+      }
+    };
+    input.click();
+  };
+
+  const removePrototypeUrl = async () => {
+    try {
+      await api.put(`/cm/modules/${id}`, { clear_prototype_url: true });
+      fetchModule();
+      message.success('Prototype HTML removed');
+    } catch { message.error('Failed to remove'); }
+  };
+
   const handleSectionVideoUpload = (sectionId: number) => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -367,6 +402,40 @@ export default function ContentManagerEdit() {
                         }
                       />
                     </Form.Item>
+
+                    <Divider><RobotOutlined /> Interactive Prototype</Divider>
+                    <div style={{ marginBottom: 20 }}>
+                      <Text type="secondary" style={{ display: 'block', marginBottom: 10, fontSize: 13 }}>
+                        Upload an interactive HTML file for hands-on practice. Learners will see it in an iframe during the Practice step.
+                      </Text>
+                      {mod?.prototype_url ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#f9f5ff', borderRadius: 10, border: '1px solid #e9d4ff' }}>
+                          <RobotOutlined style={{ color: PURPLE, fontSize: 18 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <Text strong style={{ fontSize: 13, color: PURPLE }}>Prototype HTML uploaded</Text>
+                            <div style={{ fontSize: 12, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {mod.prototype_url}
+                            </div>
+                          </div>
+                          <Space size={6}>
+                            <Button size="small" type="link" href={mod.prototype_url} target="_blank" icon={<EyeOutlined />}>Preview</Button>
+                            <Button size="small" icon={<UploadOutlined />} onClick={handlePrototypeUpload} style={{ borderColor: PURPLE, color: PURPLE }}>Replace</Button>
+                            <Popconfirm title="Remove prototype HTML?" onConfirm={removePrototypeUrl}>
+                              <Button size="small" danger icon={<DeleteOutlined />}>Remove</Button>
+                            </Popconfirm>
+                          </Space>
+                        </div>
+                      ) : (
+                        <Button
+                          icon={<UploadOutlined />}
+                          onClick={handlePrototypeUpload}
+                          style={{ borderColor: PURPLE, color: PURPLE, borderRadius: 8 }}
+                          block
+                        >
+                          Upload Prototype HTML (.html)
+                        </Button>
+                      )}
+                    </div>
 
                     <Divider />
                     <Row gutter={16}>

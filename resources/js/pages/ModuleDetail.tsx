@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Card, Steps, Button, Checkbox, Radio, Space, Tag, Spin, message, Divider, Image, Alert, Result, Progress as AntProgress, Layout, Menu, Statistic, Rate, Input, Dropdown } from 'antd';
 import { CheckCircleOutlined, TrophyOutlined, BookOutlined, StarOutlined, StarFilled, PlayCircleOutlined, FileTextOutlined, PictureOutlined, LeftOutlined, RightOutlined, CopyOutlined, DownloadOutlined, SafetyCertificateOutlined, RiseOutlined, BulbOutlined, UnorderedListOutlined, ShareAltOutlined, LinkedinOutlined, XOutlined, WhatsAppOutlined, RobotOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import VideoPlayer from '@/components/VideoPlayer';
+import PrototypeSimulator from '@/components/PrototypeSimulator';
 import AssistantDrawer from '@/components/AssistantDrawer';
 import { assistantApi, AssistantStatus } from '@/lib/assistantApi';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,7 +29,7 @@ export default function ModuleDetail() {
   const [mod, setMod] = useState<any>(null);
   const [progress, setProgress] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState(0); // 0=Learn, 1=Quiz, 2=Done
+  const [step, setStep] = useState(0); // 0=Learn, 1=Prototype, 2=Quiz, 3=Done
   const [checklistState, setChecklistState] = useState<Record<number, boolean>>({});
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
   const [quizResult, setQuizResult] = useState<any>(null);
@@ -68,14 +69,16 @@ export default function ModuleDetail() {
           setStep(0);
           setViewingIntro(false);
         } else if (p.quiz_completed && p.module_completed) {
-          setStep(2);
+          setStep(3);
           setQuizResult({ score: p.quiz_score, passed: true });
           localStorage.removeItem(`module_step_${slug}`);
         } else {
           // Restore the step the user was on when they left (stored in localStorage)
           const savedStep = parseInt(localStorage.getItem(`module_step_${slug}`) || '0', 10);
-          if (savedStep === 1 && !p.quiz_completed) {
-            setStep(1); // resume at quiz page
+          if (savedStep === 2 && !p.quiz_completed) {
+            setStep(2); // resume at quiz page
+          } else if (savedStep === 1 && !p.prototype_completed && (m.prototype_url || m.prototype_config)) {
+            setStep(1); // resume at prototype page
           }
           // else step stays 0 — resume content at last_section_id
         }
@@ -189,10 +192,23 @@ export default function ModuleDetail() {
   const allChecklistDone = mod?.checklists?.every((c: any) => checklistState[c.id]) ||
     mod?.sections?.every((s: any) => viewedSections.includes(s.id)) || false;
 
-  const proceedToQuiz = async () => {
+  const hasPrototype = !!(mod?.prototype_url || (mod?.prototype_config?.enabled && mod?.prototype_config?.flows?.length > 0));
+
+  const proceedFromLearn = async () => {
     try { await markHelpViewed(); } catch {}
-    localStorage.setItem(`module_step_${slug}`, '1');
-    setStep(1);
+    if (hasPrototype) {
+      localStorage.setItem(`module_step_${slug}`, '1');
+      setStep(1); // go to prototype
+    } else {
+      localStorage.setItem(`module_step_${slug}`, '2');
+      setStep(2); // skip prototype, go to quiz
+    }
+    window.scrollTo(0, 0);
+  };
+
+  const proceedToQuiz = () => {
+    localStorage.setItem(`module_step_${slug}`, '2');
+    setStep(2);
     window.scrollTo(0, 0);
   };
 
@@ -206,7 +222,7 @@ export default function ModuleDetail() {
       }
       if (res.data.passed) {
         localStorage.removeItem(`module_step_${slug}`);
-        setStep(2);
+        setStep(3);
         refreshUser();
       }
     } catch (err: any) {
@@ -321,7 +337,7 @@ export default function ModuleDetail() {
               }}>
                 <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                   {mod.sections?.map((_: any, idx: number) => {
-                    const isViewed = (step >= 2) || viewedSections.includes(mod.sections[idx].id);
+                    const isViewed = (step >= 3) || viewedSections.includes(mod.sections[idx].id);
                     return (
                       <div key={idx}
                         onClick={() => setCurrentSectionId(mod.sections[idx].id)}
@@ -367,11 +383,11 @@ export default function ModuleDetail() {
           {step > 0 && (
             <span style={{
               fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 12,
-              color: step === 2 ? '#52c41a' : '#6B2FA0',
-              background: step === 2 ? '#f6ffed' : '#f3ebfc',
-              border: step === 2 ? '1px solid #d9f7be' : '1px solid #e9d4ff',
+              color: step === 3 ? '#52c41a' : '#6B2FA0',
+              background: step === 3 ? '#f6ffed' : '#f3ebfc',
+              border: step === 3 ? '1px solid #d9f7be' : '1px solid #e9d4ff',
             }}>
-              {step === 2 ? '✓ Completed' : '● In Progress'}
+              {step === 3 ? '✓ Completed' : '● In Progress'}
             </span>
           )}
         </div>
@@ -427,10 +443,10 @@ export default function ModuleDetail() {
                   Your Progress
                 </div>
                 <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.1, letterSpacing: -0.5 }}>
-                  {step >= 2 ? '100%' : `${Math.round((viewedSections.length / (mod.sections?.length || 1)) * 100)}%`}
+                  {step >= 3 ? '100%' : `${Math.round((viewedSections.length / (mod.sections?.length || 1)) * 100)}%`}
                 </div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 3 }}>
-                  {step >= 2 ? 'Course complete 🎉' : `${viewedSections.length} of ${mod.sections?.length || 0} lessons read`}
+                  {step >= 3 ? 'Course complete 🎉' : `${viewedSections.length} of ${mod.sections?.length || 0} lessons read`}
                 </div>
               </div>
               {/* Circular progress indicator */}
@@ -438,11 +454,11 @@ export default function ModuleDetail() {
                 <svg width="52" height="52" viewBox="0 0 52 52" style={{ transform: 'rotate(-90deg)' }}>
                   <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="4" />
                   <circle cx="26" cy="26" r="22" fill="none"
-                    stroke={step >= 2 ? '#52c41a' : '#fff'}
+                    stroke={step >= 3 ? '#52c41a' : '#fff'}
                     strokeWidth="4"
                     strokeLinecap="round"
                     strokeDasharray={`${2 * Math.PI * 22}`}
-                    strokeDashoffset={`${2 * Math.PI * 22 * (1 - (step >= 2 ? 1 : viewedSections.length / (mod.sections?.length || 1)))}`}
+                    strokeDashoffset={`${2 * Math.PI * 22 * (1 - (step >= 3 ? 1 : viewedSections.length / (mod.sections?.length || 1)))}`}
                     style={{ transition: 'stroke-dashoffset 0.5s ease' }}
                   />
                 </svg>
@@ -451,7 +467,7 @@ export default function ModuleDetail() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 13, fontWeight: 800, color: '#fff',
                 }}>
-                  {step >= 2 ? '✓' : viewedSections.length}
+                  {step >= 3 ? '✓' : viewedSections.length}
                 </div>
               </div>
             </div>
@@ -460,8 +476,8 @@ export default function ModuleDetail() {
             <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.2)', overflow: 'hidden', position: 'relative' }}>
               <div style={{
                 height: '100%', borderRadius: 3,
-                background: step >= 2 ? '#52c41a' : 'rgba(255,255,255,0.9)',
-                width: step >= 2 ? '100%' : `${Math.round((viewedSections.length / (mod.sections?.length || 1)) * 100)}%`,
+                background: step >= 3 ? '#52c41a' : 'rgba(255,255,255,0.9)',
+                width: step >= 3 ? '100%' : `${Math.round((viewedSections.length / (mod.sections?.length || 1)) * 100)}%`,
                 transition: 'width 0.5s ease',
                 boxShadow: '0 0 8px rgba(255,255,255,0.5)',
               }} />
@@ -477,10 +493,10 @@ export default function ModuleDetail() {
               </div>
               <span style={{
                 fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
-                background: (step >= 2 || allChecklistDone) ? '#f3ebfc' : '#f5f5f5',
-                color: (step >= 2 || allChecklistDone) ? '#6B2FA0' : '#999',
+                background: (step >= 3 || allChecklistDone) ? '#f3ebfc' : '#f5f5f5',
+                color: (step >= 3 || allChecklistDone) ? '#6B2FA0' : '#999',
               }}>
-                {step >= 2 ? mod.sections?.length || 0 : viewedSections.length}/{mod.sections?.length || 0}
+                {step >= 3 ? mod.sections?.length || 0 : viewedSections.length}/{mod.sections?.length || 0}
               </span>
             </div>
 
@@ -534,7 +550,7 @@ export default function ModuleDetail() {
               )}
 
               {mod.sections?.map((s: any, i: number) => {
-                const moduleComplete = step >= 2;
+                const moduleComplete = step >= 3;
                 const viewed = moduleComplete || viewedSections.includes(s.id);
                 const active = currentSectionId === s.id && step === 0 && !viewingIntro;
                 const isBookmarked = bookmarks.includes(s.id);
@@ -605,38 +621,78 @@ export default function ModuleDetail() {
             <div style={{ height: 1, background: '#f0f0f0' }} />
           </div>
 
+          {/* ── PROTOTYPE PRACTICE CARD ── */}
+          {hasPrototype && (
+            <div style={{ padding: '0 8px 6px' }}>
+              <div
+                onClick={() => { if (step >= 1 && allChecklistDone) { localStorage.setItem(`module_step_${slug}`, '1'); setStep(1); } }}
+                style={{
+                  borderRadius: 12, padding: '14px 14px',
+                  cursor: step >= 1 && allChecklistDone ? 'pointer' : 'default',
+                  transition: 'all 0.25s ease',
+                  background: step === 1
+                    ? 'linear-gradient(135deg, #6B2FA0, #9B59B6)'
+                    : step >= 2
+                      ? '#f9f5ff'
+                      : '#fafafa',
+                  border: step === 1 ? 'none' : step >= 2 ? '1px solid #d3adf7' : '1px solid #f0f0f0',
+                  opacity: allChecklistDone || step >= 1 ? 1 : 0.5,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+                    background: step === 1 ? 'rgba(255,255,255,0.2)' : step >= 2 ? '#6B2FA0' : '#e8e8e8',
+                    color: step >= 1 ? '#fff' : '#bbb',
+                  }}>
+                    {progress?.prototype_completed ? '✓' : '🎮'}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: step === 1 ? '#fff' : step >= 2 ? '#6B2FA0' : '#333' }}>
+                      Hands-on Practice
+                    </div>
+                    <div style={{ fontSize: 11, color: step === 1 ? 'rgba(255,255,255,0.7)' : step >= 2 ? '#9B59B6' : '#aaa', marginTop: 1 }}>
+                      {progress?.prototype_completed ? 'Completed ✓' : step >= 1 ? (mod.prototype_url ? 'Interactive practice · +30 pts' : `${mod.prototype_config?.flows?.length || 0} flows · +${mod.prototype_config?.points_reward || 30} pts`) : 'Complete lessons first'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ── QUIZ CARD ── */}
           <div style={{ padding: '0 8px 6px' }}>
             <div
-              onClick={() => { if (allChecklistDone) proceedToQuiz(); }}
+              onClick={() => { if (step >= 2) { localStorage.setItem(`module_step_${slug}`, '2'); setStep(2); } }}
               style={{
                 borderRadius: 12, padding: '14px 14px',
-                cursor: allChecklistDone ? 'pointer' : 'default',
+                cursor: step >= 2 ? 'pointer' : 'default',
                 transition: 'all 0.25s ease',
-                background: step === 1
+                background: step === 2
                   ? 'linear-gradient(135deg, #6B2FA0, #9B59B6)'
-                  : step >= 2
+                  : step >= 3
                     ? '#f9f5ff'
                     : '#fafafa',
-                border: step === 1 ? 'none' : step >= 2 ? '1px solid #d3adf7' : '1px solid #f0f0f0',
-                opacity: allChecklistDone || step >= 1 ? 1 : 0.5,
+                border: step === 2 ? 'none' : step >= 3 ? '1px solid #d3adf7' : '1px solid #f0f0f0',
+                opacity: step >= 2 ? 1 : 0.5,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
                   width: 32, height: 32, borderRadius: 10, flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
-                  background: step === 1 ? 'rgba(255,255,255,0.2)' : step >= 2 ? '#6B2FA0' : '#e8e8e8',
-                  color: step >= 1 ? '#fff' : '#bbb',
+                  background: step === 2 ? 'rgba(255,255,255,0.2)' : step >= 3 ? '#6B2FA0' : '#e8e8e8',
+                  color: step >= 2 ? '#fff' : '#bbb',
                 }}>
-                  {step >= 2 ? '✓' : '📝'}
+                  {step >= 3 ? '✓' : '📝'}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: step === 1 ? '#fff' : step >= 2 ? '#6B2FA0' : '#333' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: step === 2 ? '#fff' : step >= 3 ? '#6B2FA0' : '#333' }}>
                     Knowledge Check
                   </div>
-                  <div style={{ fontSize: 11, color: step === 1 ? 'rgba(255,255,255,0.7)' : step >= 2 ? '#9B59B6' : '#aaa', marginTop: 1 }}>
-                    {step >= 2 ? 'Passed ✓' : allChecklistDone ? `${mod.quizzes?.length || 0} questions · Start` : 'Read all lessons first'}
+                  <div style={{ fontSize: 11, color: step === 2 ? 'rgba(255,255,255,0.7)' : step >= 3 ? '#9B59B6' : '#aaa', marginTop: 1 }}>
+                    {step >= 3 ? 'Passed ✓' : step >= 2 ? `${mod.quizzes?.length || 0} questions · Start` : 'Complete practice first'}
                   </div>
                 </div>
               </div>
@@ -646,23 +702,23 @@ export default function ModuleDetail() {
           {/* ── CERTIFICATE CARD ── */}
           <div style={{ padding: '0 8px 14px' }}>
             <div
-              onClick={() => { if (step >= 2) setStep(2); }}
+              onClick={() => { if (step >= 3) setStep(3); }}
               style={{
                 borderRadius: 12, padding: '14px 14px',
-                cursor: step >= 2 ? 'pointer' : 'default',
+                cursor: step >= 3 ? 'pointer' : 'default',
                 transition: 'all 0.3s ease',
-                background: step >= 2
+                background: step >= 3
                   ? 'linear-gradient(135deg, #f9f5ff 0%, #f3ebfc 50%, #f9f5ff 100%)'
                   : '#fafafa',
-                border: step >= 2 ? '1.5px solid #d3adf7' : '1px solid #f0f0f0',
-                opacity: step >= 2 ? 1 : 0.4,
-                boxShadow: step >= 2 ? '0 2px 12px rgba(107,47,160,0.15)' : 'none',
+                border: step >= 3 ? '1.5px solid #d3adf7' : '1px solid #f0f0f0',
+                opacity: step >= 3 ? 1 : 0.4,
+                boxShadow: step >= 3 ? '0 2px 12px rgba(107,47,160,0.15)' : 'none',
                 position: 'relative',
                 overflow: 'hidden',
               }}
             >
               {/* Shimmer effect when earned */}
-              {step >= 2 && (
+              {step >= 3 && (
                 <div style={{
                   position: 'absolute', top: 0, left: '-100%', width: '200%', height: '100%',
                   background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
@@ -674,23 +730,23 @@ export default function ModuleDetail() {
                 <div style={{
                   width: 34, height: 34, borderRadius: 10, flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-                  background: step >= 2
+                  background: step >= 3
                     ? 'linear-gradient(135deg, #6B2FA0, #9B59B6)'
                     : '#e8e8e8',
-                  color: step >= 2 ? '#fff' : '#bbb',
-                  boxShadow: step >= 2 ? '0 2px 8px rgba(107,47,160,0.35)' : 'none',
+                  color: step >= 3 ? '#fff' : '#bbb',
+                  boxShadow: step >= 3 ? '0 2px 8px rgba(107,47,160,0.35)' : 'none',
                 }}>
-                  {step >= 2 ? '🏅' : '🔒'}
+                  {step >= 3 ? '🏅' : '🔒'}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: step >= 2 ? '#6B2FA0' : '#999' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: step >= 3 ? '#6B2FA0' : '#999' }}>
                     Certificate
                   </div>
-                  <div style={{ fontSize: 11, color: step >= 2 ? '#9B59B6' : '#ccc', marginTop: 1 }}>
-                    {step >= 2 ? 'Tap to view 🎉' : 'Pass quiz to unlock'}
+                  <div style={{ fontSize: 11, color: step >= 3 ? '#9B59B6' : '#ccc', marginTop: 1 }}>
+                    {step >= 3 ? 'Tap to view 🎉' : 'Pass quiz to unlock'}
                   </div>
                 </div>
-                {step >= 2 && (
+                {step >= 3 && (
                   <span style={{ fontSize: 11, color: '#6B2FA0', fontWeight: 600 }}>View →</span>
                 )}
               </div>
@@ -1055,7 +1111,7 @@ export default function ModuleDetail() {
 
               {!viewingIntro && <button
                 disabled={!allChecklistDone}
-                onClick={proceedToQuiz}
+                onClick={proceedFromLearn}
                 style={{
                   width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
                   fontSize: 15, fontWeight: 700, cursor: allChecklistDone ? 'pointer' : 'not-allowed',
@@ -1064,12 +1120,105 @@ export default function ModuleDetail() {
                   transition: 'all 0.2s', letterSpacing: 0.3,
                 }}
               >
-                Continue to Quiz →
+                {hasPrototype ? 'Continue to Practice →' : 'Continue to Quiz →'}
               </button>}
             </>)}
 
+          {/* PROTOTYPE STEP — iframe for HTML upload, fallback to JSON simulator */}
+          {step === 1 && hasPrototype && (
+            mod.prototype_url ? (
+              /* HTML-upload prototype: embedded iframe */
+              <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                <div style={{ background: 'linear-gradient(90deg, #6B2FA0 0%, #9B59B6 50%, #c084fc 100%)', height: 4 }} />
+                <div style={{ padding: '18px 24px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 20 }}>🎮</span>
+                    <div>
+                      <div style={{ fontSize: 17, fontWeight: 700, color: '#1a0933' }}>Interactive Practice</div>
+                      <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>Complete the hands-on activity below, then mark it as done</div>
+                    </div>
+                  </div>
+                  {progress?.prototype_completed && (
+                    <Tag color="green" style={{ fontSize: 12, padding: '4px 12px', borderRadius: 12 }}>
+                      <CheckCircleOutlined /> Completed
+                    </Tag>
+                  )}
+                </div>
+                <iframe
+                  src={mod.prototype_url}
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                  style={{ width: '100%', height: 650, border: 'none', display: 'block' }}
+                  title="Interactive Prototype Practice"
+                />
+                <div style={{ padding: '18px 24px', borderTop: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafafa' }}>
+                  {!progress?.prototype_completed ? (
+                    <Button
+                      type="primary"
+                      size="large"
+                      icon={<CheckCircleOutlined />}
+                      style={{ background: '#6B2FA0', borderColor: '#6B2FA0', borderRadius: 10, fontWeight: 600, height: 46, paddingInline: 28 }}
+                      onClick={async () => {
+                        try {
+                          const res = await api.post(`/progress/${mod.id}/prototype`, { flow_id: 'html_prototype', completed: true });
+                          setProgress((prev: any) => ({
+                            ...prev,
+                            prototype_progress: res.data.prototype_progress,
+                            prototype_completed: res.data.prototype_completed,
+                          }));
+                          if (res.data.first_completion && res.data.achievement) {
+                            setAchievement(res.data.achievement);
+                          }
+                          if (res.data.first_completion) {
+                            refreshUser();
+                            message.success('Practice completed! +30 points');
+                          }
+                        } catch { message.error('Failed to save progress'); }
+                      }}
+                    >
+                      I've completed the practice
+                    </Button>
+                  ) : (
+                    <Button
+                      type="primary"
+                      size="large"
+                      style={{ background: '#6B2FA0', borderColor: '#6B2FA0', borderRadius: 10, fontWeight: 600, height: 46, paddingInline: 28 }}
+                      onClick={proceedToQuiz}
+                    >
+                      Continue to Quiz →
+                    </Button>
+                  )}
+                  <Text type="secondary" style={{ fontSize: 12 }}>+30 points for completing</Text>
+                </div>
+              </div>
+            ) : (
+              /* Legacy JSON config: PrototypeSimulator */
+              <PrototypeSimulator
+                config={mod.prototype_config}
+                completedFlows={progress?.prototype_progress ?? {}}
+                onFlowComplete={async (flowId: string) => {
+                  try {
+                    const res = await api.post(`/progress/${mod.id}/prototype`, { flow_id: flowId, completed: true });
+                    setProgress((prev: any) => ({
+                      ...prev,
+                      prototype_progress: res.data.prototype_progress,
+                      prototype_completed: res.data.prototype_completed,
+                    }));
+                    if (res.data.first_completion && res.data.achievement) {
+                      setAchievement(res.data.achievement);
+                    }
+                    if (res.data.first_completion) {
+                      refreshUser();
+                    }
+                  } catch { message.error('Failed to save progress'); }
+                }}
+                allComplete={progress?.prototype_completed ?? false}
+                onProceed={proceedToQuiz}
+              />
+            )
+          )}
+
           {/* QUIZ STEP — one question at a time */}
-          {step === 1 && (() => {
+          {step === 2 && (() => {
             const quizzes = mod.quizzes || [];
             const total = quizzes.length;
             const q = quizzes[currentQuizIndex];
@@ -1315,7 +1464,7 @@ export default function ModuleDetail() {
           })()}
 
           {/* DONE STEP — Achievement Card */}
-          {step === 2 && (() => {
+          {step === 3 && (() => {
         const ach = achievement;
         const modulePoints = mod.points_reward || 50;
         const quizBonus = quizResult?.passed ? 20 : (ach?.quiz_bonus || 0);

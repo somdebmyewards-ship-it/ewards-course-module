@@ -65,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('progress/{moduleId}/quiz', [QuizController::class, 'submit']);
         Route::get('progress/{moduleId}/quiz-answers', [QuizController::class, 'answers']);
         Route::post('progress/{moduleId}/reset', [ProgressController::class, 'reset']);
+        Route::post('progress/{moduleId}/prototype', [ProgressController::class, 'updatePrototype']);
         Route::post('progress/{moduleId}/resume', [ProgressController::class, 'saveResume']);
 
         Route::get('takeaways', [ProgressController::class, 'takeaways']);

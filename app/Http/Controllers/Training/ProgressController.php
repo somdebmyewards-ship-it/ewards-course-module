@@ -7,6 +7,7 @@ use App\Models\TrainingSection;
 use App\Models\TrainingProgress;
 use App\Models\SectionView;
 use App\Models\Certificate;
+use App\Models\PointsLedger;
 use App\Services\CompletionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +47,7 @@ class ProgressController extends Controller
                 'icon' => $m->icon,
                 'help_viewed' => $p?->help_viewed ?? false,
                 'checklist_completed' => $p?->checklist_completed ?? false,
+                'prototype_completed' => $p?->prototype_completed ?? false,
                 'quiz_completed' => $p?->quiz_completed ?? false,
                 'quiz_score' => $p?->quiz_score ?? 0,
                 'module_completed' => $p?->module_completed ?? false,
@@ -205,13 +207,95 @@ class ProgressController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function updatePrototype(Request $request, int $moduleId)
+    {
+        $request->validate([
+            'flow_id' => 'required|string',
+            'completed' => 'required|boolean',
+        ]);
+
+        // D1: Verify module is published and has prototype (URL or config)
+        $module = TrainingModule::where('is_published', true)->findOrFail($moduleId);
+
+        if (!$module->prototype_url && !$module->prototype_config) {
+            return response()->json(['message' => 'This module does not have a prototype practice step.'], 404);
+        }
+
+        $userId = $request->user()->id;
+        $isHtmlPrototype = (bool) $module->prototype_url;
+
+        $result = DB::transaction(function () use ($request, $userId, $moduleId, $module, $isHtmlPrototype) {
+            $progress = TrainingProgress::updateOrCreate(
+                ['user_id' => $userId, 'module_id' => $moduleId],
+                []
+            );
+
+            // Merge the flow completion status into prototype_progress JSON
+            $prototypeProgress = $progress->prototype_progress ?? [];
+            $prototypeProgress[$request->flow_id] = $request->completed;
+
+            $updateData = ['prototype_progress' => $prototypeProgress];
+
+            if ($isHtmlPrototype) {
+                // HTML-upload prototype: single flow_id 'html_prototype' — complete immediately
+                $allDone = $request->completed;
+            } else {
+                // Legacy JSON config: check if all required flows are done
+                $config = $module->prototype_config;
+                $requiredFlowIds = collect($config['flows'] ?? [])->pluck('id')->toArray();
+                $allDone = !empty($requiredFlowIds) && collect($requiredFlowIds)->every(
+                    fn($flowId) => !empty($prototypeProgress[$flowId])
+                );
+            }
+
+            $firstCompletion = false;
+            if ($allDone && !$progress->prototype_completed) {
+                $updateData['prototype_completed'] = true;
+                $updateData['prototype_completed_at'] = now();
+                $firstCompletion = true;
+            }
+
+            $progress->update($updateData);
+
+            // Award points when prototype first completed
+            if ($firstCompletion) {
+                $pointsReward = $isHtmlPrototype ? 30 : ($module->prototype_config['points_reward'] ?? 30);
+                $request->user()->increment('points', $pointsReward);
+                PointsLedger::record($userId, $pointsReward, 'prototype_complete', $moduleId);
+            }
+
+            $freshProgress = $progress->fresh();
+            $this->updateProgressPercent($freshProgress, $module);
+            $achievement = $this->completion->checkAndComplete($freshProgress->fresh());
+
+            return [
+                'prototype_progress' => $prototypeProgress,
+                'prototype_completed' => $allDone,
+                'first_completion' => $firstCompletion,
+                'progress' => $freshProgress->fresh(),
+                'achievement' => $achievement,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'prototype_progress' => $result['prototype_progress'],
+            'prototype_completed' => $result['prototype_completed'],
+            'first_completion' => $result['first_completion'],
+            'progress' => $result['progress'],
+            'achievement' => $result['achievement'],
+        ]);
+    }
+
     private function updateProgressPercent(TrainingProgress $progress, TrainingModule $module): void
     {
         $totalSteps = 2; // help + checklist
-        if ($module->quiz_enabled) $totalSteps = 3;
+        if ($module->prototype_url || $module->prototype_config) $totalSteps++;
+        if ($module->quiz_enabled) $totalSteps++;
         $completedSteps = 0;
         if ($progress->help_viewed) $completedSteps++;
         if ($progress->checklist_completed) $completedSteps++;
+        if ($progress->prototype_completed) $completedSteps++;
         if ($progress->quiz_completed) $completedSteps++;
         $progress->progress_percent = round(($completedSteps / $totalSteps) * 100);
         $progress->save();

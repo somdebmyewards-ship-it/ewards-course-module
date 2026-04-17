@@ -26,8 +26,9 @@ class CompletionService
 
         $basicComplete = true;
         if (!$progress->help_viewed) $basicComplete = false;
-        if ($module->quiz_enabled && !$progress->quiz_completed) $basicComplete = false;
         if ($module->require_checklist && !$progress->checklist_completed) $basicComplete = false;
+        if (($module->prototype_url || $module->prototype_config) && !$progress->prototype_completed) $basicComplete = false;
+        if ($module->quiz_enabled && !$progress->quiz_completed) $basicComplete = false;
 
         // Verify all required sections have been viewed
         $requiredSections = \App\Models\TrainingSection::where('module_id', $progress->module_id)

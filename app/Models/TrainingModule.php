@@ -16,7 +16,7 @@ class TrainingModule extends Model
         'title', 'slug', 'description', 'estimated_minutes', 'icon', 'display_order',
         'video_url', 'image_urls', 'document_urls', 'points_reward',
         'quiz_enabled', 'require_help_viewed', 'require_checklist', 'require_quiz',
-        'certificate_enabled', 'completion_rules',
+        'certificate_enabled', 'completion_rules', 'prototype_config', 'prototype_url',
         'is_published', 'page_route', 'created_by', 'updated_by',
     ];
 
@@ -24,6 +24,7 @@ class TrainingModule extends Model
         'image_urls' => 'array',
         'document_urls' => 'array',
         'completion_rules' => 'array',
+        'prototype_config' => 'array',
         'is_published' => 'boolean',
         'quiz_enabled' => 'boolean',
         'certificate_enabled' => 'boolean',

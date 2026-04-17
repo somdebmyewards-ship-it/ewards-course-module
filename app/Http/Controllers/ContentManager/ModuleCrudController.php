@@ -29,6 +29,7 @@ class ModuleCrudController extends Controller
             'points_reward' => 'nullable|integer|min:0',
             'is_published' => 'nullable|boolean',
             'page_route' => 'nullable|string|max:255',
+            'prototype_url' => 'nullable|string|max:500',
         ]);
 
         // D3: Generate unique slug
@@ -74,6 +75,7 @@ class ModuleCrudController extends Controller
             'require_quiz'        => 'nullable|boolean',
             'certificate_enabled' => 'nullable|boolean',
             'page_route'          => 'nullable|string|max:255',
+            'prototype_url'       => 'nullable|string|max:500',
         ]);
 
         // Auto-regenerate slug only when title changes and slug was not explicitly provided
@@ -84,10 +86,15 @@ class ModuleCrudController extends Controller
         // Laravel's ConvertEmptyStringsToNull middleware turns '' into null.
         // For optional string fields, drop null from the update so the existing
         // DB value is preserved (keeps saved video_url, page_route, icon intact).
-        foreach (['video_url', 'page_route', 'icon', 'description'] as $col) {
+        foreach (['video_url', 'page_route', 'icon', 'description', 'prototype_url'] as $col) {
             if (array_key_exists($col, $validated) && $validated[$col] === null) {
                 unset($validated[$col]);
             }
+        }
+
+        // Allow explicit clearing of prototype_url via clear_prototype_url flag
+        if ($request->boolean('clear_prototype_url')) {
+            $validated['prototype_url'] = null;
         }
 
         $module->update($validated);
