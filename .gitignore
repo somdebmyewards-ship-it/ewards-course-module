@@ -22,3 +22,4 @@ yarn-error.log
 
 .vercel
 certs/
+/_nm_stubs/
