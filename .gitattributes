@@ -1,11 +1,49 @@
+# Force LF line endings for all text files — prevents CRLF warnings on Windows
 * text=auto eol=lf
 
-*.blade.php diff=html
-*.css diff=css
-*.html diff=html
-*.md diff=markdown
-*.php diff=php
+# PHP / Laravel
+*.php text eol=lf diff=php
+*.blade.php text eol=lf diff=html
 
+# Frontend
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.json text eol=lf
+*.html text eol=lf diff=html
+
+# Config / Deploy
+*.yaml text eol=lf
+*.yml text eol=lf
+*.env text eol=lf
+Dockerfile text eol=lf
+*.sh text eol=lf
+
+# Docs
+*.md text eol=lf diff=markdown
+*.txt text eol=lf
+
+# Binary files — no line ending conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.webp binary
+*.mp4 binary
+*.webm binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+
+# Export ignores
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
