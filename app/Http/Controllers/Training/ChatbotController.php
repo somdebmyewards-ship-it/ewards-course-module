@@ -46,6 +46,12 @@ class ChatbotController extends Controller
         }
         RateLimiter::hit($rlKey, 60);
 
+        // Block inappropriate / abusive content
+        $abuse = $this->detectAbuse($question);
+        if ($abuse) {
+            return response()->json($abuse);
+        }
+
         // Handle greetings / small-talk without hitting the retrieval pipeline
         $greeting = $this->detectGreeting($question);
         if ($greeting) {
@@ -508,5 +514,89 @@ class ChatbotController extends Controller
         }
 
         return null; // Longer input without domain keywords — let retrieval try
+    }
+
+    /**
+     * Detect profanity, abuse, harassment, and inappropriate content.
+     * Returns a firm but polite response, or null if the input is clean.
+     */
+    private function detectAbuse(string $question): ?array
+    {
+        $q = strtolower(trim($question));
+
+        // Profanity & slurs — covers common words, leetspeak, and spaced-out evasion
+        $profanityPatterns = [
+            '/\b(fuck|f+u+c+k+|fck|fuk|f\s*u\s*c\s*k)\b/i',
+            '/\b(shit|sh+i+t+|sh1t|s\s*h\s*i\s*t)\b/i',
+            '/\b(ass+hole|a+ss+|a\s*s\s*s)\b/i',
+            '/\b(bitch|b+i+t+c+h+|b1tch)\b/i',
+            '/\b(bastard|b+a+s+t+a+r+d+)\b/i',
+            '/\b(damn|d+a+m+n+)\b/i',
+            '/\b(crap|dick|cock|penis|vagina|boob|tit)\b/i',
+            '/\b(idiot|stupid|dumb|moron|retard|loser|trash|garbage)\b/i',
+            '/\b(stfu|gtfo|wtf|wth|omfg|smh)\b/i',
+            '/\b(slut|whore|hoe|thot|skank)\b/i',
+            '/\b(nigga|nigger|n+i+g+)\b/i',
+            '/\b(cunt|twat|prick|wanker)\b/i',
+            '/\b(suck|sucks|sucking|blows)\b/i',
+            '/\b(die|kill|murder|suicide|rape)\b/i',
+        ];
+
+        // Directed abuse — "you are stupid", "you suck", "go to hell"
+        $abusePatterns = [
+            '/\b(you|u|ur)\s+(suck|stink|are\s+(stupid|dumb|useless|trash|garbage|terrible|worst|bad|annoying|pathetic))/i',
+            '/\b(go\s+to\s+hell|go\s+die|shut\s*up|piss\s+off|buzz\s+off|get\s+lost)\b/i',
+            '/\b(hate\s+(you|u)|screw\s+(you|u)|damn\s+(you|u))\b/i',
+            '/\b(useless\s+(bot|ai|assistant|thing|app|tool))\b/i',
+            '/\b(worst\s+(bot|ai|assistant|app|thing|ever))\b/i',
+            '/\b(you\s+are\s+a\s+(joke|scam|fraud|waste))\b/i',
+        ];
+
+        // Inappropriate requests
+        $inappropriatePatterns = [
+            '/\b(sex|porn|nude|naked|xxx|nsfw|onlyfans)\b/i',
+            '/\b(drug|weed|cocaine|heroin|meth)\b/i',
+            '/\b(hack|exploit|crack|steal|phishing)\b/i',
+            '/\b(bomb|weapon|gun|terrorist)\b/i',
+        ];
+
+        foreach ($profanityPatterns as $p) {
+            if (preg_match($p, $q)) {
+                return $this->abuseResponse();
+            }
+        }
+
+        foreach ($abusePatterns as $p) {
+            if (preg_match($p, $q)) {
+                return $this->abuseResponse();
+            }
+        }
+
+        foreach ($inappropriatePatterns as $p) {
+            if (preg_match($p, $q)) {
+                return $this->abuseResponse('inappropriate');
+            }
+        }
+
+        return null;
+    }
+
+    private function abuseResponse(string $type = 'profanity'): array
+    {
+        if ($type === 'inappropriate') {
+            return [
+                'answer'       => "I'm only able to help with **eWards platform** questions. I can't assist with that kind of request. Let's keep things on topic! 🙂\n\nHere are some things I can help with:",
+                'sources'      => [],
+                'suggestions'  => $this->defaultSuggestions(),
+                'answer_found' => true,
+            ];
+        }
+
+        return [
+            'answer'       => "Hey, let's keep it respectful! 🙏 I'm **Ela**, here to help you learn the eWards platform. I work best when we keep things professional.\n\nHere's what I can help you with:",
+            'sources'      => [],
+            'suggestions'  => $this->defaultSuggestions(),
+            'answer_found' => true,
+        ];
     }
 }

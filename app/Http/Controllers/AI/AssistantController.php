@@ -93,6 +93,15 @@ class AssistantController extends Controller
         // 4. Sanitise — strip prompt-injection patterns
         $question = $this->sanitise(strip_tags(trim($request->input('question'))));
 
+        // 4b. Block abusive / inappropriate content
+        if ($this->containsAbuse($question)) {
+            return response()->json([
+                'answer'       => "Let's keep it respectful! 🙏 I'm here to help you learn about this module. Try asking a question about the training content.",
+                'sources'      => [],
+                'answer_found' => true,
+            ]);
+        }
+
         // 5. Cache identical questions for 1 hour (per module)
         $cacheKey = "ai_answer:{$moduleId}:" . md5(strtolower($question));
         if ($cached = Cache::get($cacheKey)) {
@@ -236,5 +245,33 @@ class AssistantController extends Controller
         if (!in_array($role, ['ADMIN', 'TRAINER'])) {
             abort(403, 'Unauthorised.');
         }
+    }
+
+    /**
+     * Check for profanity, abuse, or inappropriate content.
+     */
+    private function containsAbuse(string $question): bool
+    {
+        $q = strtolower($question);
+        $patterns = [
+            '/\b(fuck|f+u+c+k+|fck|fuk)\b/i',
+            '/\b(shit|sh+i+t+|sh1t)\b/i',
+            '/\b(ass+hole|bitch|b1tch|bastard|cunt|twat|wanker|prick)\b/i',
+            '/\b(idiot|stupid|dumb|moron|retard|loser|trash)\b/i',
+            '/\b(stfu|gtfo|wtf)\b/i',
+            '/\b(slut|whore|hoe|thot|nigga|nigger)\b/i',
+            '/\b(die|kill|murder|suicide|rape)\b/i',
+            '/\b(sex|porn|nude|naked|xxx|nsfw)\b/i',
+            '/\b(drug|cocaine|heroin|meth)\b/i',
+            '/\b(hack|exploit|phishing|bomb|weapon|terrorist)\b/i',
+            '/\b(you|u)\s+(suck|are\s+(stupid|dumb|useless|trash|terrible|pathetic))/i',
+            '/\b(go\s+to\s+hell|go\s+die|shut\s*up|piss\s+off)\b/i',
+            '/\b(hate\s+(you|u)|screw\s+(you|u)|damn\s+(you|u))\b/i',
+        ];
+
+        foreach ($patterns as $p) {
+            if (preg_match($p, $q)) return true;
+        }
+        return false;
     }
 }
