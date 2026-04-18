@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Card, Tabs, Form, Input, InputNumber, Switch, Button, Space, Spin, message, Popconfirm, Select, Divider, Tag, Checkbox, Row, Col, Badge, Tooltip, Alert, Progress } from 'antd';
-import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, DeleteOutlined, LinkOutlined, SafetyCertificateOutlined, CheckSquareOutlined, EyeOutlined, PlayCircleOutlined, FileTextOutlined, BookOutlined, CheckCircleOutlined, SettingOutlined, OrderedListOutlined, QuestionCircleOutlined, TrophyOutlined, UploadOutlined, ClockCircleOutlined, StarOutlined, EditOutlined, RobotOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, DeleteOutlined, LinkOutlined, SafetyCertificateOutlined, CheckSquareOutlined, EyeOutlined, PlayCircleOutlined, FileTextOutlined, BookOutlined, CheckCircleOutlined, SettingOutlined, OrderedListOutlined, QuestionCircleOutlined, TrophyOutlined, UploadOutlined, ClockCircleOutlined, StarOutlined, EditOutlined, RobotOutlined, SyncOutlined } from '@ant-design/icons';
+import { assistantApi, AssistantStatus } from '@/lib/assistantApi';
 import api from '@/lib/api';
 
 const { Title, Text, Paragraph } = Typography;
@@ -15,6 +16,12 @@ export default function ContentManagerEdit() {
   const [detailsForm] = Form.useForm();
   const [passingPercent, setPassingPercent] = useState<number>(75);
   const [saving, setSaving] = useState(false);
+  const [aiStatus, setAiStatus] = useState<AssistantStatus | null>(null);
+  const [indexing, setIndexing] = useState(false);
+
+  const fetchAiStatus = () => {
+    assistantApi.getStatus(Number(id)).then(r => setAiStatus(r.data)).catch(() => {});
+  };
 
   const fetchModule = () => {
     api.get(`/cm/modules/${id}`).then(r => {
@@ -26,7 +33,14 @@ export default function ContentManagerEdit() {
       setLoading(false);
     }).catch(() => setLoading(false));
   };
-  useEffect(fetchModule, [id]);
+  useEffect(() => { fetchModule(); fetchAiStatus(); }, [id]);
+
+  // Poll every 3 s while indexing is in progress
+  useEffect(() => {
+    if (aiStatus?.index_status !== 'indexing') return;
+    const timer = setInterval(fetchAiStatus, 3000);
+    return () => clearInterval(timer);
+  }, [aiStatus?.index_status, id]);
 
   const saveDetails = async (values: any) => {
     setSaving(true);
@@ -94,6 +108,28 @@ export default function ContentManagerEdit() {
       await api.put(`/cm/modules/${id}/quiz-metadata`, { passing_percent: passingPercent });
       message.success('Passing percent saved');
     } catch { message.error('Failed to save'); }
+  };
+
+  const toggleAssistant = async (enabled: boolean) => {
+    try {
+      await assistantApi.toggle(Number(id), enabled);
+      setAiStatus(prev => prev ? { ...prev, enabled } : null);
+      message.success(enabled ? 'AI assistant enabled' : 'AI assistant disabled');
+    } catch {
+      message.error('Failed to update assistant setting');
+    }
+  };
+
+  const triggerIndex = async () => {
+    setIndexing(true);
+    try {
+      await assistantApi.triggerIndex(Number(id));
+      setAiStatus(prev => prev ? { ...prev, index_status: 'indexing' } : null);
+      message.success('Indexing started — this may take a minute');
+    } catch {
+      message.error('Failed to start indexing');
+    }
+    setIndexing(false);
   };
 
   const handleIconUpload = () => {
@@ -499,7 +535,7 @@ export default function ContentManagerEdit() {
                 </Card>
 
                 {/* Dashboard Link */}
-                <Card title={<span><LinkOutlined /> Dashboard Link</span>} style={{ borderRadius: 12 }}>
+                <Card title={<span><LinkOutlined /> Dashboard Link</span>} style={{ borderRadius: 12, marginBottom: 16 }}>
                   <Form form={detailsForm} layout="vertical" onFinish={saveDetails}>
                     <Form.Item name="page_route" label="Linked Page Route">
                       <Input placeholder="/campaign/create" />
@@ -510,6 +546,89 @@ export default function ContentManagerEdit() {
                       Module URL: <Tag color="purple" style={{ margin: 0 }}>/learning-hub/{mod?.slug}</Tag>
                     </Text>
                   </div>
+                </Card>
+
+                {/* AI Learning Assistant */}
+                <Card
+                  title={<span><RobotOutlined style={{ color: PURPLE, marginRight: 6 }} />AI Learning Assistant</span>}
+                  style={{ borderRadius: 12 }}
+                >
+                  {/* Status row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <Text type="secondary" style={{ fontSize: 13 }}>Index Status</Text>
+                    {aiStatus ? (() => {
+                      const cfg: Record<string, { color: string; label: string }> = {
+                        ready:       { color: 'success', label: '✓ Ready' },
+                        indexing:    { color: 'processing', label: '⟳ Indexing…' },
+                        not_indexed: { color: 'warning', label: '○ Not Indexed' },
+                        failed:      { color: 'error',   label: '✕ Failed' },
+                      };
+                      const s = cfg[aiStatus.index_status] ?? cfg['not_indexed'];
+                      return <Tag color={s.color} style={{ borderRadius: 12, margin: 0 }}>{s.label}</Tag>;
+                    })() : <Spin size="small" />}
+                  </div>
+
+                  {/* Enable/Disable toggle */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, padding: '10px 12px', background: '#f9f5ff', borderRadius: 8 }}>
+                    <div>
+                      <Text style={{ fontSize: 13, fontWeight: 500 }}>Enable Assistant</Text>
+                      <div><Text type="secondary" style={{ fontSize: 11 }}>Learners can ask questions about this module</Text></div>
+                    </div>
+                    <Switch
+                      checked={aiStatus?.enabled ?? false}
+                      onChange={toggleAssistant}
+                      disabled={!aiStatus}
+                      checkedChildren="On"
+                      unCheckedChildren="Off"
+                      style={aiStatus?.enabled ? { background: PURPLE } : {}}
+                    />
+                  </div>
+
+                  {/* Index button */}
+                  <Button
+                    icon={<SyncOutlined spin={indexing || aiStatus?.index_status === 'indexing'} />}
+                    onClick={triggerIndex}
+                    loading={indexing}
+                    disabled={aiStatus?.index_status === 'indexing'}
+                    block
+                    style={{ borderColor: PURPLE, color: PURPLE, borderRadius: 8, marginBottom: 10 }}
+                  >
+                    {aiStatus?.index_status === 'indexing' ? 'Indexing in Progress…' : (aiStatus?.index_status === 'ready' ? 'Re-index Content' : 'Index Content')}
+                  </Button>
+
+                  {/* Last indexed timestamp */}
+                  {aiStatus?.last_indexed_at ? (
+                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 8 }}>
+                      <ClockCircleOutlined style={{ marginRight: 4 }} />
+                      Last indexed: {new Date(aiStatus.last_indexed_at).toLocaleString()}
+                    </Text>
+                  ) : aiStatus?.index_status === 'ready' ? null : (
+                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 8 }}>
+                      <ClockCircleOutlined style={{ marginRight: 4 }} />
+                      Never indexed
+                    </Text>
+                  )}
+
+                  {/* Guidance alert when not indexed */}
+                  {aiStatus?.index_status === 'not_indexed' && (
+                    <Alert
+                      message="Not indexed yet"
+                      description="Click 'Index Content' so the AI can answer learner questions about this module."
+                      type="warning"
+                      showIcon
+                      style={{ borderRadius: 8, fontSize: 12 }}
+                    />
+                  )}
+
+                  {aiStatus?.index_status === 'failed' && (
+                    <Alert
+                      message="Indexing failed"
+                      description="Try clicking 'Re-index Content' again. Check that this module has sections with content."
+                      type="error"
+                      showIcon
+                      style={{ borderRadius: 8, fontSize: 12 }}
+                    />
+                  )}
                 </Card>
               </Col>
             </Row>
