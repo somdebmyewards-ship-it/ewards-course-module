@@ -61,7 +61,7 @@ services:
 
       # ── CORS & Auth ────────────────────────────────────────────
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: "https://ewards-learning-hub.vercel.app"
       - key: SANCTUM_TOKEN_EXPIRATION
         value: "480"
 
