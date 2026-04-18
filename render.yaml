@@ -87,7 +87,7 @@ services:
 
       # ── File Uploads (Cloudinary) ──────────────────────────────
       - key: CLOUDINARY_URL
-        sync: false
+        value: "cloudinary://255359974551711:snBWaITgkLhrPsQVdsrgQDWrU7E@dkewiu7dq"
 
       # ── AI Services ────────────────────────────────────────────
       - key: HUGGINGFACE_API_TOKEN
