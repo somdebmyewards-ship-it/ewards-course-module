@@ -268,12 +268,12 @@ export default function ChatWidget() {
   const [loadingStage, setLoadingStage]   = useState(0);
   const [showGreeting, setShowGreeting]   = useState(false);
   const [greetingDone, setGreetingDone]   = useState(false);
-  const bottomRef    = useRef<HTMLDivElement>(null);
-  const scrollRef    = useRef<HTMLDivElement>(null);
-  const inputRef     = useRef<HTMLInputElement>(null);
-  const navigate     = useNavigate();
-  const stageTimer   = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const scrollLock   = useRef(false);
+  const bottomRef       = useRef<HTMLDivElement>(null);
+  const scrollRef       = useRef<HTMLDivElement>(null);
+  const inputRef        = useRef<HTMLInputElement>(null);
+  const navigate        = useNavigate();
+  const stageTimer      = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const userScrolledUp  = useRef(false);
 
   // Greeting popup
   useEffect(() => {
@@ -284,29 +284,27 @@ export default function ChatWidget() {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  // Smooth scroll to bottom — debounced to prevent rapid glitchy jumps
-  const scrollToBottom = useCallback((instant?: boolean) => {
-    if (scrollLock.current) return;
+  // Scroll helper — no lock, just smooth or instant
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const el = scrollRef.current;
     if (!el) return;
-    scrollLock.current = true;
     requestAnimationFrame(() => {
-      el.scrollTo({
-        top: el.scrollHeight,
-        behavior: instant ? 'instant' : 'smooth',
-      });
-      // Release lock after animation settles
-      setTimeout(() => { scrollLock.current = false; }, instant ? 50 : 350);
+      el.scrollTo({ top: el.scrollHeight, behavior });
     });
   }, []);
 
-  useEffect(() => {
-    // Only auto-scroll if user is near the bottom (within 120px)
+  // Track if the user manually scrolled up (so we don't hijack their reading)
+  const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-    if (nearBottom) scrollToBottom();
-  }, [messages, loading, scrollToBottom]);
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    userScrolledUp.current = distFromBottom > 80;
+  }, []);
+
+  // Auto-scroll only for the typing indicator appearing (user hasn't scrolled away)
+  useEffect(() => {
+    if (loading && !userScrolledUp.current) scrollToBottom('smooth');
+  }, [loading, scrollToBottom]);
 
   useEffect(() => {
     if (open) {
@@ -337,8 +335,10 @@ export default function ChatWidget() {
     setInput('');
     setLoading(true);
     setLoadingStage(0);
-    // Instant scroll to show the user's message immediately
-    setTimeout(() => scrollToBottom(true), 30);
+    userScrolledUp.current = false; // reset — user just asked, they want to see the reply
+
+    // Instant scroll to bottom so user sees their own bubble
+    requestAnimationFrame(() => scrollToBottom('instant'));
 
     try {
       const res = await api.post('/chatbot/ask', {
@@ -357,6 +357,9 @@ export default function ChatWidget() {
       };
       setMessages(prev => [...prev, botMsg]);
 
+      // Smooth scroll to reveal the answer after React paints it
+      setTimeout(() => scrollToBottom('smooth'), 60);
+
       // Update conversation history
       setHistory(prev => [
         ...prev.slice(-8),
@@ -372,11 +375,12 @@ export default function ChatWidget() {
         answer_found: false,
         timestamp: new Date(),
       }]);
+      setTimeout(() => scrollToBottom('smooth'), 60);
     } finally {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [loading, history]);
+  }, [loading, history, scrollToBottom]);
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
@@ -563,7 +567,7 @@ export default function ChatWidget() {
           </div>
 
           {/* Messages */}
-          <div ref={scrollRef} style={{
+          <div ref={scrollRef} onScroll={handleScroll} style={{
             flex: 1, overflowY: 'auto', padding: '16px',
             display: 'flex', flexDirection: 'column', gap: 14,
             background: '#f7f4fc',
