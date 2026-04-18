@@ -4,6 +4,7 @@ namespace App\Http\Controllers\ContentManager;
 
 use App\Http\Controllers\Controller;
 use App\Models\TrainingModule;
+use App\Models\QuizMetadata;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -50,7 +51,7 @@ class ModuleCrudController extends Controller
 
     public function show(int $id)
     {
-        $module = TrainingModule::with(['sections', 'checklists', 'quizzes'])->findOrFail($id);
+        $module = TrainingModule::with(['sections', 'checklists', 'quizzes', 'quizMetadata'])->findOrFail($id);
         return response()->json($module);
     }
 
@@ -101,6 +102,27 @@ class ModuleCrudController extends Controller
         Cache::forget('published_modules');
         Cache::forget("module_{$module->slug}");
         return response()->json($module->fresh());
+    }
+
+    public function updateQuizMetadata(Request $request, int $moduleId)
+    {
+        $module = TrainingModule::findOrFail($moduleId);
+        $validated = $request->validate([
+            'passing_percent' => 'required|integer|min:1|max:100',
+        ]);
+
+        QuizMetadata::updateOrCreate(
+            ['module_id' => $moduleId],
+            ['passing_percent' => $validated['passing_percent']]
+        );
+
+        Cache::forget('published_modules');
+        Cache::forget("module_{$module->slug}");
+
+        return response()->json([
+            'message'         => 'Quiz metadata updated.',
+            'passing_percent' => $validated['passing_percent'],
+        ]);
     }
 
     public function destroy(int $id)

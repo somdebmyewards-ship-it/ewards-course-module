@@ -119,6 +119,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('modules/{moduleId}/quiz', [QuizCrudController::class, 'store']);
             Route::put('quiz/{id}', [QuizCrudController::class, 'update']);
             Route::delete('quiz/{id}', [QuizCrudController::class, 'destroy']);
+            Route::put('modules/{moduleId}/quiz-metadata', [ModuleCrudController::class, 'updateQuizMetadata']);
 
             Route::post('upload', [MediaUploadController::class, 'store']);
             Route::post('upload-chunk', [ChunkUploadController::class, 'storeChunk']);
