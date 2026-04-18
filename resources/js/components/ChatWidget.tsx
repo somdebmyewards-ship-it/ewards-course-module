@@ -284,32 +284,13 @@ export default function ChatWidget() {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  // Smooth scroll with controlled duration (ms) using easeInOutQuad
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth', duration = 600) => {
+  // Scroll helper — no lock, just smooth or instant
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const el = scrollRef.current;
     if (!el) return;
-
-    if (behavior === 'instant') {
-      requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
-      return;
-    }
-
-    const start    = el.scrollTop;
-    const end      = el.scrollHeight - el.clientHeight;
-    const distance = end - start;
-    if (distance <= 0) return;
-
-    const startTime = performance.now();
-    const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOutQuad
-
-    const step = (now: number) => {
-      const elapsed  = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      el.scrollTop   = start + distance * ease(progress);
-      if (progress < 1) requestAnimationFrame(step);
-    };
-
-    requestAnimationFrame(step);
+    requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior });
+    });
   }, []);
 
   // Track if the user manually scrolled up (so we don't hijack their reading)
@@ -376,8 +357,8 @@ export default function ChatWidget() {
       };
       setMessages(prev => [...prev, botMsg]);
 
-      // Slow smooth scroll to reveal the answer after React paints it
-      setTimeout(() => scrollToBottom('smooth', 700), 80);
+      // Smooth scroll to reveal the answer after React paints it
+      setTimeout(() => scrollToBottom('smooth'), 60);
 
       // Update conversation history
       setHistory(prev => [
@@ -394,7 +375,7 @@ export default function ChatWidget() {
         answer_found: false,
         timestamp: new Date(),
       }]);
-      setTimeout(() => scrollToBottom('smooth', 700), 80);
+      setTimeout(() => scrollToBottom('smooth'), 60);
     } finally {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -590,6 +571,7 @@ export default function ChatWidget() {
             flex: 1, overflowY: 'auto', padding: '16px',
             display: 'flex', flexDirection: 'column', gap: 14,
             background: '#f7f4fc',
+            scrollBehavior: 'smooth',
           }}>
             {messages.length === 0 && (
               <div style={{ textAlign: 'center', padding: '24px 12px', animation: 'elaFadeIn 0.4s ease' }}>
