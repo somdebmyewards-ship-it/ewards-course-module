@@ -1,0 +1,370 @@
+[2026-04-20 12:10:24] local.ERROR: Maximum execution time of 30 seconds exceeded {"userId":1,"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Maximum execution time of 30 seconds exceeded at D:/ProjectCache/ewards-vendor/guzzlehttp/guzzle/src/Handler/CurlMultiHandler.php:169)
+[stacktrace]
+#0 {main}
+"} 
+[2026-04-20 12:14:24] local.ERROR: Method App\Http\Controllers\Training\ChatbotController::detectAbuse does not exist. {"userId":1,"exception":"[object] (BadMethodCallException(code: 0): Method App\\Http\\Controllers\\Training\\ChatbotController::detectAbuse does not exist. at D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Controller.php:68)
+[stacktrace]
+#0 D:/dev/ewards-learning-hub/app/Http/Controllers/Training/ChatbotController.php(50): Illuminate/Routing/Controller->__call('detectAbuse', Array)
+#1 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Controller.php(54): App/Http/Controllers/Training/ChatbotController->ask(Object(Illuminate/Http/Request))
+#2 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/ControllerDispatcher.php(43): Illuminate/Routing/Controller->callAction('ask', Array)
+#3 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Route.php(269): Illuminate/Routing/ControllerDispatcher->dispatch(Object(Illuminate/Routing/Route), Object(App/Http/Controllers/Training/ChatbotController), 'ask')
+#4 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Route.php(215): Illuminate/Routing/Route->runController()
+#5 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(822): Illuminate/Routing/Route->run()
+#6 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate/Routing/Router->Illuminate/Routing/{closure}(Object(Illuminate/Http/Request))
+#7 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Middleware/SubstituteBindings.php(52): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#8 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Routing/Middleware/SubstituteBindings->handle(Object(Illuminate/Http/Request), Object(Closure))
+#9 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(168): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#10 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(93): Illuminate/Routing/Middleware/ThrottleRequests->handleRequest(Object(Illuminate/Http/Request), Object(Closure), Array)
+#11 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Routing/Middleware/ThrottleRequests->handle(Object(Illuminate/Http/Request), Object(Closure), '15', '1')
+#12 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(168): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#13 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(129): Illuminate/Routing/Middleware/ThrottleRequests->handleRequest(Object(Illuminate/Http/Request), Object(Closure), Array)
+#14 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(90): Illuminate/Routing/Middleware/ThrottleRequests->handleRequestUsingNamedLimiter(Object(Illuminate/Http/Request), Object(Closure), 'api', Object(Closure))
+#15 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Routing/Middleware/ThrottleRequests->handle(Object(Illuminate/Http/Request), Object(Closure), 'api')
+#16 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(63): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#17 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Auth/Middleware/Authenticate->handle(Object(Illuminate/Http/Request), Object(Closure), 'sanctum')
+#18 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#19 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(821): Illuminate/Pipeline/Pipeline->then(Object(Closure))
+#20 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(800): Illuminate/Routing/Router->runRouteWithinStack(Object(Illuminate/Routing/Route), Object(Illuminate/Http/Request))
+#21 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(764): Illuminate/Routing/Router->runRoute(Object(Illuminate/Http/Request), Object(Illuminate/Routing/Route))
+#22 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(753): Illuminate/Routing/Router->dispatchToRoute(Object(Illuminate/Http/Request))
+#23 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(200): Illuminate/Routing/Router->dispatch(Object(Illuminate/Http/Request))
+#24 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate/Foundation/Http/Kernel->Illuminate/Foundation/Http/{closure}(Object(Illuminate/Http/Request))
+#25 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#26 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate/Foundation/Http/Middleware/TransformsRequest->handle(Object(Illuminate/Http/Request), Object(Closure))
+#27 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull->handle(Object(Illuminate/Http/Request), Object(Closure))
+#28 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#29 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate/Foundation/Http/Middleware/TransformsRequest->handle(Object(Illuminate/Http/Request), Object(Closure))
+#30 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/TrimStrings->handle(Object(Illuminate/Http/Request), Object(Closure))
+#31 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#32 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/ValidatePostSize->handle(Object(Illuminate/Http/Request), Object(Closure))
+#33 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(109): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#34 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance->handle(Object(Illuminate/Http/Request), Object(Closure))
+#35 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(74): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#36 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/HandleCors->handle(Object(Illuminate/Http/Request), Object(Closure))
+#37 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#38 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/TrustProxies->handle(Object(Illuminate/Http/Request), Object(Closure))
+#39 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#40 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks->handle(Object(Illuminate/Http/Request), Object(Closure))
+#41 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePathEncoding.php(28): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#42 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/ValidatePathEncoding->handle(Object(Illuminate/Http/Request), Object(Closure))
+#43 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#44 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(175): Illuminate/Pipeline/Pipeline->then(Object(Closure))
+#45 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(144): Illuminate/Foundation/Http/Kernel->sendRequestThroughRouter(Object(Illuminate/Http/Request))
+#46 D:/dev/ewards-learning-hub/public/index.php(51): Illuminate/Foundation/Http/Kernel->handle(Object(Illuminate/Http/Request))
+#47 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('D://dev//ewards-l...')
+#48 {main}
+"} 
+[2026-04-20 12:19:14] local.ERROR: HuggingFace embedding API failed {"status":404,"body":"<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+<meta charset=\"utf-8\">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot POST /models/sentence-transformers/all-MiniLM-L6-v2</pre>
+</body>
+</html>
+"} 
+[2026-04-20 12:19:22] local.ERROR: LLM API failed {"status":400,"body":"{\"error\":{\"message\":\"The model `llama3-8b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.\",\"type\":\"invalid_request_error\",\"code\":\"model_decommissioned\"}}
+"} 
+[2026-04-20 12:19:22] local.WARNING: Ela LLM failed, using extractive fallback: LLM API failed: HTTP 400  
+[2026-04-20 12:20:38] local.ERROR: LLM API failed {"status":400,"body":"{\"error\":{\"message\":\"The model `llama3-8b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.\",\"type\":\"invalid_request_error\",\"code\":\"model_decommissioned\"}}
+"} 
+[2026-04-20 12:20:38] local.WARNING: Ela LLM failed, using extractive fallback: LLM API failed: HTTP 400  
+[2026-04-20 12:21:34] local.ERROR: LLM API failed {"status":400,"body":"{\"error\":{\"message\":\"The model `llama3-8b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.\",\"type\":\"invalid_request_error\",\"code\":\"model_decommissioned\"}}
+"} 
+[2026-04-20 12:21:34] local.WARNING: Ela LLM failed, using extractive fallback: LLM API failed: HTTP 400  
+[2026-04-20 12:23:45] local.ERROR: LLM API failed {"status":400,"body":"{\"error\":{\"message\":\"The model `llama3-8b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.\",\"type\":\"invalid_request_error\",\"code\":\"model_decommissioned\"}}
+"} 
+[2026-04-20 12:23:45] local.WARNING: Ela LLM failed, using extractive fallback: LLM API failed: HTTP 400  
+[2026-04-20 12:25:05] local.ERROR: Route [login] not defined. {"exception":"[object] (Symfony\\Component\\Routing\\Exception\\RouteNotFoundException(code: 0): Route [login] not defined. at D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/UrlGenerator.php:536)
+[stacktrace]
+#0 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/helpers.php(870): Illuminate/Routing/UrlGenerator->route('login', Array, true)
+#1 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilder.php(280): route('login')
+#2 [internal function]: Illuminate/Foundation/Configuration/ApplicationBuilder->Illuminate/Foundation/Configuration/{closure}(Object(Illuminate/Http/Request))
+#3 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(117): call_user_func(Object(Closure), Object(Illuminate/Http/Request))
+#4 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(104): Illuminate/Auth/Middleware/Authenticate->redirectTo(Object(Illuminate/Http/Request))
+#5 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(87): Illuminate/Auth/Middleware/Authenticate->unauthenticated(Object(Illuminate/Http/Request), Array)
+#6 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(61): Illuminate/Auth/Middleware/Authenticate->authenticate(Object(Illuminate/Http/Request), Array)
+#7 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Auth/Middleware/Authenticate->handle(Object(Illuminate/Http/Request), Object(Closure), 'sanctum')
+#8 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#9 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(821): Illuminate/Pipeline/Pipeline->then(Object(Closure))
+#10 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(800): Illuminate/Routing/Router->runRouteWithinStack(Object(Illuminate/Routing/Route), Object(Illuminate/Http/Request))
+#11 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(764): Illuminate/Routing/Router->runRoute(Object(Illuminate/Http/Request), Object(Illuminate/Routing/Route))
+#12 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(753): Illuminate/Routing/Router->dispatchToRoute(Object(Illuminate/Http/Request))
+#13 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(200): Illuminate/Routing/Router->dispatch(Object(Illuminate/Http/Request))
+#14 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate/Foundation/Http/Kernel->Illuminate/Foundation/Http/{closure}(Object(Illuminate/Http/Request))
+#15 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#16 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate/Foundation/Http/Middleware/TransformsRequest->handle(Object(Illuminate/Http/Request), Object(Closure))
+#17 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull->handle(Object(Illuminate/Http/Request), Object(Closure))
+#18 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#19 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate/Foundation/Http/Middleware/TransformsRequest->handle(Object(Illuminate/Http/Request), Object(Closure))
+#20 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/TrimStrings->handle(Object(Illuminate/Http/Request), Object(Closure))
+#21 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#22 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/ValidatePostSize->handle(Object(Illuminate/Http/Request), Object(Closure))
+#23 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(109): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#24 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance->handle(Object(Illuminate/Http/Request), Object(Closure))
+#25 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(74): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#26 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/HandleCors->handle(Object(Illuminate/Http/Request), Object(Closure))
+#27 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#28 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/TrustProxies->handle(Object(Illuminate/Http/Request), Object(Closure))
+#29 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#30 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks->handle(Object(Illuminate/Http/Request), Object(Closure))
+#31 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePathEncoding.php(28): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#32 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/ValidatePathEncoding->handle(Object(Illuminate/Http/Request), Object(Closure))
+#33 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#34 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(175): Illuminate/Pipeline/Pipeline->then(Object(Closure))
+#35 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(144): Illuminate/Foundation/Http/Kernel->sendRequestThroughRouter(Object(Illuminate/Http/Request))
+#36 D:/dev/ewards-learning-hub/public/index.php(51): Illuminate/Foundation/Http/Kernel->handle(Object(Illuminate/Http/Request))
+#37 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('D://dev//ewards-l...')
+#38 {main}
+"} 
+[2026-04-20 12:25:17] local.ERROR: Route [login] not defined. {"exception":"[object] (Symfony\\Component\\Routing\\Exception\\RouteNotFoundException(code: 0): Route [login] not defined. at D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/UrlGenerator.php:536)
+[stacktrace]
+#0 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/helpers.php(870): Illuminate/Routing/UrlGenerator->route('login', Array, true)
+#1 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilder.php(280): route('login')
+#2 [internal function]: Illuminate/Foundation/Configuration/ApplicationBuilder->Illuminate/Foundation/Configuration/{closure}(Object(Illuminate/Http/Request))
+#3 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(117): call_user_func(Object(Closure), Object(Illuminate/Http/Request))
+#4 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(104): Illuminate/Auth/Middleware/Authenticate->redirectTo(Object(Illuminate/Http/Request))
+#5 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(87): Illuminate/Auth/Middleware/Authenticate->unauthenticated(Object(Illuminate/Http/Request), Array)
+#6 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(61): Illuminate/Auth/Middleware/Authenticate->authenticate(Object(Illuminate/Http/Request), Array)
+#7 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Auth/Middleware/Authenticate->handle(Object(Illuminate/Http/Request), Object(Closure), 'sanctum')
+#8 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#9 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(821): Illuminate/Pipeline/Pipeline->then(Object(Closure))
+#10 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(800): Illuminate/Routing/Router->runRouteWithinStack(Object(Illuminate/Routing/Route), Object(Illuminate/Http/Request))
+#11 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(764): Illuminate/Routing/Router->runRoute(Object(Illuminate/Http/Request), Object(Illuminate/Routing/Route))
+#12 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(753): Illuminate/Routing/Router->dispatchToRoute(Object(Illuminate/Http/Request))
+#13 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(200): Illuminate/Routing/Router->dispatch(Object(Illuminate/Http/Request))
+#14 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate/Foundation/Http/Kernel->Illuminate/Foundation/Http/{closure}(Object(Illuminate/Http/Request))
+#15 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#16 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate/Foundation/Http/Middleware/TransformsRequest->handle(Object(Illuminate/Http/Request), Object(Closure))
+#17 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull->handle(Object(Illuminate/Http/Request), Object(Closure))
+#18 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#19 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate/Foundation/Http/Middleware/TransformsRequest->handle(Object(Illuminate/Http/Request), Object(Closure))
+#20 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/TrimStrings->handle(Object(Illuminate/Http/Request), Object(Closure))
+#21 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#22 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/ValidatePostSize->handle(Object(Illuminate/Http/Request), Object(Closure))
+#23 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(109): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#24 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance->handle(Object(Illuminate/Http/Request), Object(Closure))
+#25 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(74): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#26 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/HandleCors->handle(Object(Illuminate/Http/Request), Object(Closure))
+#27 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#28 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/TrustProxies->handle(Object(Illuminate/Http/Request), Object(Closure))
+#29 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#30 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks->handle(Object(Illuminate/Http/Request), Object(Closure))
+#31 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePathEncoding.php(28): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#32 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/ValidatePathEncoding->handle(Object(Illuminate/Http/Request), Object(Closure))
+#33 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#34 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(175): Illuminate/Pipeline/Pipeline->then(Object(Closure))
+#35 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(144): Illuminate/Foundation/Http/Kernel->sendRequestThroughRouter(Object(Illuminate/Http/Request))
+#36 D:/dev/ewards-learning-hub/public/index.php(51): Illuminate/Foundation/Http/Kernel->handle(Object(Illuminate/Http/Request))
+#37 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('D://dev//ewards-l...')
+#38 {main}
+"} 
+[2026-04-20 12:26:01] local.ERROR: LLM API failed {"status":400,"body":"{\"error\":{\"message\":\"The model `llama3-8b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.\",\"type\":\"invalid_request_error\",\"code\":\"model_decommissioned\"}}
+"} 
+[2026-04-20 12:26:01] local.WARNING: Ela LLM failed, using extractive fallback: LLM API failed: HTTP 400  
+[2026-04-20 12:26:44] local.ERROR: LLM API failed {"status":400,"body":"{\"error\":{\"message\":\"The model `llama3-8b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.\",\"type\":\"invalid_request_error\",\"code\":\"model_decommissioned\"}}
+"} 
+[2026-04-20 12:26:44] local.WARNING: Ela LLM failed, using extractive fallback: LLM API failed: HTTP 400  
+[2026-04-20 13:14:33] local.ERROR: Uncaught PDOException: PDO::__construct(): SSL: Handshake timed out in D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connectors\Connector.php:66
+Stack trace:
+#0 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connectors\Connector.php(66): PDO->__construct('mysql:host=gate...', 'CjK9LE89HdBCPR8...', Object(SensitiveParameterValue), Array)
+#1 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connectors\Connector.php(44): Illuminate\Database\Connectors\Connector->createPdoConnection('mysql:host=gate...', 'CjK9LE89HdBCPR8...', Object(SensitiveParameterValue), Array)
+#2 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connectors\MySqlConnector.php(24): Illuminate\Database\Connectors\Connector->createConnection('mysql:host=gate...', Array, Array)
+#3 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connectors\ConnectionFactory.php(186): Illuminate\Database\Connectors\MySqlConnector->connect(Array)
+#4 [internal function]: Illuminate\Database\Connectors\ConnectionFactory->Illuminate\Database\Connectors\{closure}()
+#5 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(1279): call_user_func(Object(Closure))
+#6 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(1317): Illuminate\Database\Connection->getPdo()
+#7 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(528): Illuminate\Database\Connection->getReadPdo()
+#8 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(421): Illuminate\Database\Connection->getPdoForSelect(true)
+#9 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(830): Illuminate\Database\Connection->Illuminate\Database\{closure}('select count(*)...', Array)
+#10 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(797): Illuminate\Database\Connection->runQueryCallback('select count(*)...', Array, Object(Closure))
+#11 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(412): Illuminate\Database\Connection->run('select count(*)...', Array, Object(Closure))
+#12 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3562): Illuminate\Database\Connection->select('select count(*)...', Array, true, Array)
+#13 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3546): Illuminate\Database\Query\Builder->runSelect()
+#14 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(4062): Illuminate\Database\Query\Builder->get(Array)
+#15 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3990): Illuminate\Database\Query\Builder->aggregate('count', Array)
+#16 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php(2270): Illuminate\Database\Query\Builder->count()
+#17 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Support\Traits\ForwardsCalls.php(23): Illuminate\Database\Eloquent\Builder->__call('count', Array)
+#18 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php(2793): Illuminate\Database\Eloquent\Model->forwardCallTo(Object(Illuminate\Database\Eloquent\Builder), 'count', Array)
+#19 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php(2809): Illuminate\Database\Eloquent\Model->__call('count', Array)
+#20 Command line code(1): Illuminate\Database\Eloquent\Model::__callStatic('count', Array)
+#21 {main}
+
+Next PDOException: SQLSTATE[HY000] [2002] Cannot connect to MySQL using SSL in D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connectors\Connector.php:66
+Stack trace:
+#0 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connectors\Connector.php(66): PDO->__construct('mysql:host=gate...', 'CjK9LE89HdBCPR8...', Object(SensitiveParameterValue), Array)
+#1 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connectors\Connector.php(44): Illuminate\Database\Connectors\Connector->createPdoConnection('mysql:host=gate...', 'CjK9LE89HdBCPR8...', Object(SensitiveParameterValue), Array)
+#2 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connectors\MySqlConnector.php(24): Illuminate\Database\Connectors\Connector->createConnection('mysql:host=gate...', Array, Array)
+#3 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connectors\ConnectionFactory.php(186): Illuminate\Database\Connectors\MySqlConnector->connect(Array)
+#4 [internal function]: Illuminate\Database\Connectors\ConnectionFactory->Illuminate\Database\Connectors\{closure}()
+#5 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(1279): call_user_func(Object(Closure))
+#6 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(1317): Illuminate\Database\Connection->getPdo()
+#7 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(528): Illuminate\Database\Connection->getReadPdo()
+#8 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(421): Illuminate\Database\Connection->getPdoForSelect(true)
+#9 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(830): Illuminate\Database\Connection->Illuminate\Database\{closure}('select count(*)...', Array)
+#10 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(797): Illuminate\Database\Connection->runQueryCallback('select count(*)...', Array, Object(Closure))
+#11 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(412): Illuminate\Database\Connection->run('select count(*)...', Array, Object(Closure))
+#12 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3562): Illuminate\Database\Connection->select('select count(*)...', Array, true, Array)
+#13 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3546): Illuminate\Database\Query\Builder->runSelect()
+#14 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(4062): Illuminate\Database\Query\Builder->get(Array)
+#15 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3990): Illuminate\Database\Query\Builder->aggregate('count', Array)
+#16 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php(2270): Illuminate\Database\Query\Builder->count()
+#17 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Support\Traits\ForwardsCalls.php(23): Illuminate\Database\Eloquent\Builder->__call('count', Array)
+#18 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php(2793): Illuminate\Database\Eloquent\Model->forwardCallTo(Object(Illuminate\Database\Eloquent\Builder), 'count', Array)
+#19 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php(2809): Illuminate\Database\Eloquent\Model->__call('count', Array)
+#20 Command line code(1): Illuminate\Database\Eloquent\Model::__callStatic('count', Array)
+#21 {main}
+
+Next Illuminate\Database\QueryException: SQLSTATE[HY000] [2002] Cannot connect to MySQL using SSL (Connection: mysql, Host: gateway01.us-east-1.prod.aws.tidbcloud.com, Port: 4000, Database: ewards_lms, SQL: select count(*) as aggregate from `lms_media`) in D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php:841
+Stack trace:
+#0 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(797): Illuminate\Database\Connection->runQueryCallback('select count(*)...', Array, Object(Closure))
+#1 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Connection.php(412): Illuminate\Database\Connection->run('select count(*)...', Array, Object(Closure))
+#2 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3562): Illuminate\Database\Connection->select('select count(*)...', Array, true, Array)
+#3 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3546): Illuminate\Database\Query\Builder->runSelect()
+#4 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(4062): Illuminate\Database\Query\Builder->get(Array)
+#5 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3990): Illuminate\Database\Query\Builder->aggregate('count', Array)
+#6 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php(2270): Illuminate\Database\Query\Builder->count()
+#7 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Support\Traits\ForwardsCalls.php(23): Illuminate\Database\Eloquent\Builder->__call('count', Array)
+#8 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php(2793): Illuminate\Database\Eloquent\Model->forwardCallTo(Object(Illuminate\Database\Eloquent\Builder), 'count', Array)
+#9 D:\ProjectCache\ewards-vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php(2809): Illuminate\Database\Eloquent\Model->__call('count', Array)
+#10 Command line code(1): Illuminate\Database\Eloquent\Model::__callStatic('count', Array)
+#11 {main}
+  thrown {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Uncaught PDOException: PDO::__construct(): SSL: Handshake timed out in D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connectors\\Connector.php:66
+Stack trace:
+#0 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connectors\\Connector.php(66): PDO->__construct('mysql:host=gate...', 'CjK9LE89HdBCPR8...', Object(SensitiveParameterValue), Array)
+#1 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connectors\\Connector.php(44): Illuminate\\Database\\Connectors\\Connector->createPdoConnection('mysql:host=gate...', 'CjK9LE89HdBCPR8...', Object(SensitiveParameterValue), Array)
+#2 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connectors\\MySqlConnector.php(24): Illuminate\\Database\\Connectors\\Connector->createConnection('mysql:host=gate...', Array, Array)
+#3 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connectors\\ConnectionFactory.php(186): Illuminate\\Database\\Connectors\\MySqlConnector->connect(Array)
+#4 [internal function]: Illuminate\\Database\\Connectors\\ConnectionFactory->Illuminate\\Database\\Connectors\\{closure}()
+#5 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(1279): call_user_func(Object(Closure))
+#6 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(1317): Illuminate\\Database\\Connection->getPdo()
+#7 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(528): Illuminate\\Database\\Connection->getReadPdo()
+#8 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(421): Illuminate\\Database\\Connection->getPdoForSelect(true)
+#9 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(830): Illuminate\\Database\\Connection->Illuminate\\Database\\{closure}('select count(*)...', Array)
+#10 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(797): Illuminate\\Database\\Connection->runQueryCallback('select count(*)...', Array, Object(Closure))
+#11 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(412): Illuminate\\Database\\Connection->run('select count(*)...', Array, Object(Closure))
+#12 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3562): Illuminate\\Database\\Connection->select('select count(*)...', Array, true, Array)
+#13 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3546): Illuminate\\Database\\Query\\Builder->runSelect()
+#14 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(4062): Illuminate\\Database\\Query\\Builder->get(Array)
+#15 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3990): Illuminate\\Database\\Query\\Builder->aggregate('count', Array)
+#16 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(2270): Illuminate\\Database\\Query\\Builder->count()
+#17 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Support\\Traits\\ForwardsCalls.php(23): Illuminate\\Database\\Eloquent\\Builder->__call('count', Array)
+#18 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(2793): Illuminate\\Database\\Eloquent\\Model->forwardCallTo(Object(Illuminate\\Database\\Eloquent\\Builder), 'count', Array)
+#19 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(2809): Illuminate\\Database\\Eloquent\\Model->__call('count', Array)
+#20 Command line code(1): Illuminate\\Database\\Eloquent\\Model::__callStatic('count', Array)
+#21 {main}
+
+Next PDOException: SQLSTATE[HY000] [2002] Cannot connect to MySQL using SSL in D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connectors\\Connector.php:66
+Stack trace:
+#0 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connectors\\Connector.php(66): PDO->__construct('mysql:host=gate...', 'CjK9LE89HdBCPR8...', Object(SensitiveParameterValue), Array)
+#1 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connectors\\Connector.php(44): Illuminate\\Database\\Connectors\\Connector->createPdoConnection('mysql:host=gate...', 'CjK9LE89HdBCPR8...', Object(SensitiveParameterValue), Array)
+#2 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connectors\\MySqlConnector.php(24): Illuminate\\Database\\Connectors\\Connector->createConnection('mysql:host=gate...', Array, Array)
+#3 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connectors\\ConnectionFactory.php(186): Illuminate\\Database\\Connectors\\MySqlConnector->connect(Array)
+#4 [internal function]: Illuminate\\Database\\Connectors\\ConnectionFactory->Illuminate\\Database\\Connectors\\{closure}()
+#5 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(1279): call_user_func(Object(Closure))
+#6 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(1317): Illuminate\\Database\\Connection->getPdo()
+#7 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(528): Illuminate\\Database\\Connection->getReadPdo()
+#8 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(421): Illuminate\\Database\\Connection->getPdoForSelect(true)
+#9 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(830): Illuminate\\Database\\Connection->Illuminate\\Database\\{closure}('select count(*)...', Array)
+#10 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(797): Illuminate\\Database\\Connection->runQueryCallback('select count(*)...', Array, Object(Closure))
+#11 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(412): Illuminate\\Database\\Connection->run('select count(*)...', Array, Object(Closure))
+#12 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3562): Illuminate\\Database\\Connection->select('select count(*)...', Array, true, Array)
+#13 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3546): Illuminate\\Database\\Query\\Builder->runSelect()
+#14 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(4062): Illuminate\\Database\\Query\\Builder->get(Array)
+#15 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3990): Illuminate\\Database\\Query\\Builder->aggregate('count', Array)
+#16 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(2270): Illuminate\\Database\\Query\\Builder->count()
+#17 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Support\\Traits\\ForwardsCalls.php(23): Illuminate\\Database\\Eloquent\\Builder->__call('count', Array)
+#18 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(2793): Illuminate\\Database\\Eloquent\\Model->forwardCallTo(Object(Illuminate\\Database\\Eloquent\\Builder), 'count', Array)
+#19 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(2809): Illuminate\\Database\\Eloquent\\Model->__call('count', Array)
+#20 Command line code(1): Illuminate\\Database\\Eloquent\\Model::__callStatic('count', Array)
+#21 {main}
+
+Next Illuminate\\Database\\QueryException: SQLSTATE[HY000] [2002] Cannot connect to MySQL using SSL (Connection: mysql, Host: gateway01.us-east-1.prod.aws.tidbcloud.com, Port: 4000, Database: ewards_lms, SQL: select count(*) as aggregate from `lms_media`) in D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php:841
+Stack trace:
+#0 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(797): Illuminate\\Database\\Connection->runQueryCallback('select count(*)...', Array, Object(Closure))
+#1 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(412): Illuminate\\Database\\Connection->run('select count(*)...', Array, Object(Closure))
+#2 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3562): Illuminate\\Database\\Connection->select('select count(*)...', Array, true, Array)
+#3 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3546): Illuminate\\Database\\Query\\Builder->runSelect()
+#4 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(4062): Illuminate\\Database\\Query\\Builder->get(Array)
+#5 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3990): Illuminate\\Database\\Query\\Builder->aggregate('count', Array)
+#6 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(2270): Illuminate\\Database\\Query\\Builder->count()
+#7 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Support\\Traits\\ForwardsCalls.php(23): Illuminate\\Database\\Eloquent\\Builder->__call('count', Array)
+#8 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(2793): Illuminate\\Database\\Eloquent\\Model->forwardCallTo(Object(Illuminate\\Database\\Eloquent\\Builder), 'count', Array)
+#9 D:\\ProjectCache\\ewards-vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(2809): Illuminate\\Database\\Eloquent\\Model->__call('count', Array)
+#10 Command line code(1): Illuminate\\Database\\Eloquent\\Model::__callStatic('count', Array)
+#11 {main}
+  thrown at D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Database/Connection.php:841)
+[stacktrace]
+#0 {main}
+"} 
+[2026-04-20 14:23:05] local.ERROR: Maximum execution time of 30 seconds exceeded {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Maximum execution time of 30 seconds exceeded at D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Database/Connectors/Connector.php:66)
+[stacktrace]
+#0 {main}
+"} 
+[2026-04-20 14:39:05] local.ERROR: Maximum execution time of 30 seconds exceeded {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Maximum execution time of 30 seconds exceeded at D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Database/Connectors/Connector.php:67)
+[stacktrace]
+#0 {main}
+"} 
+[2026-04-20 14:48:36] local.ERROR: Maximum execution time of 30 seconds exceeded {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Maximum execution time of 30 seconds exceeded at D:/dev/ewards-learning-hub/app/Http/Controllers/MediaStreamController.php:92)
+[stacktrace]
+#0 {main}
+"} 
+[2026-04-21 04:12:49] local.ERROR: SQLSTATE[HY000]: General error: 2006 MySQL server has gone away {"userId":1,"exception":"[object] (PDOException(code: HY000): SQLSTATE[HY000]: General error: 2006 MySQL server has gone away at D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php:306)
+[stacktrace]
+#0 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(306): PDO->rollBack()
+#1 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(278): Illuminate/Database/Connection->performRollBack(0)
+#2 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(107): Illuminate/Database/Connection->rollBack()
+#3 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(42): Illuminate/Database/Connection->handleTransactionException(Object(Illuminate/Database/QueryException), 1, 1)
+#4 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(496): Illuminate/Database/Connection->transaction(Object(Closure))
+#5 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(363): Illuminate/Database/DatabaseManager->__call('transaction', Array)
+#6 D:/dev/ewards-learning-hub/app/Http/Controllers/Training/ProgressController.php(106): Illuminate/Support/Facades/Facade::__callStatic('transaction', Array)
+#7 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Controller.php(54): App/Http/Controllers/Training/ProgressController->markHelpViewed(Object(Illuminate/Http/Request), 6)
+#8 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/ControllerDispatcher.php(43): Illuminate/Routing/Controller->callAction('markHelpViewed', Array)
+#9 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Route.php(269): Illuminate/Routing/ControllerDispatcher->dispatch(Object(Illuminate/Routing/Route), Object(App/Http/Controllers/Training/ProgressController), 'markHelpViewed')
+#10 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Route.php(215): Illuminate/Routing/Route->runController()
+#11 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(822): Illuminate/Routing/Route->run()
+#12 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate/Routing/Router->Illuminate/Routing/{closure}(Object(Illuminate/Http/Request))
+#13 D:/dev/ewards-learning-hub/app/Http/Middleware/ApprovedMiddleware.php(16): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#14 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App/Http/Middleware/ApprovedMiddleware->handle(Object(Illuminate/Http/Request), Object(Closure))
+#15 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Middleware/SubstituteBindings.php(52): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#16 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Routing/Middleware/SubstituteBindings->handle(Object(Illuminate/Http/Request), Object(Closure))
+#17 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(168): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#18 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(129): Illuminate/Routing/Middleware/ThrottleRequests->handleRequest(Object(Illuminate/Http/Request), Object(Closure), Array)
+#19 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(90): Illuminate/Routing/Middleware/ThrottleRequests->handleRequestUsingNamedLimiter(Object(Illuminate/Http/Request), Object(Closure), 'api', Object(Closure))
+#20 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Routing/Middleware/ThrottleRequests->handle(Object(Illuminate/Http/Request), Object(Closure), 'api')
+#21 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(63): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#22 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Auth/Middleware/Authenticate->handle(Object(Illuminate/Http/Request), Object(Closure), 'sanctum')
+#23 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#24 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(821): Illuminate/Pipeline/Pipeline->then(Object(Closure))
+#25 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(800): Illuminate/Routing/Router->runRouteWithinStack(Object(Illuminate/Routing/Route), Object(Illuminate/Http/Request))
+#26 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(764): Illuminate/Routing/Router->runRoute(Object(Illuminate/Http/Request), Object(Illuminate/Routing/Route))
+#27 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Routing/Router.php(753): Illuminate/Routing/Router->dispatchToRoute(Object(Illuminate/Http/Request))
+#28 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(200): Illuminate/Routing/Router->dispatch(Object(Illuminate/Http/Request))
+#29 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate/Foundation/Http/Kernel->Illuminate/Foundation/Http/{closure}(Object(Illuminate/Http/Request))
+#30 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#31 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate/Foundation/Http/Middleware/TransformsRequest->handle(Object(Illuminate/Http/Request), Object(Closure))
+#32 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull->handle(Object(Illuminate/Http/Request), Object(Closure))
+#33 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#34 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate/Foundation/Http/Middleware/TransformsRequest->handle(Object(Illuminate/Http/Request), Object(Closure))
+#35 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/TrimStrings->handle(Object(Illuminate/Http/Request), Object(Closure))
+#36 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#37 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/ValidatePostSize->handle(Object(Illuminate/Http/Request), Object(Closure))
+#38 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(109): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#39 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance->handle(Object(Illuminate/Http/Request), Object(Closure))
+#40 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(74): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#41 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/HandleCors->handle(Object(Illuminate/Http/Request), Object(Closure))
+#42 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#43 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/TrustProxies->handle(Object(Illuminate/Http/Request), Object(Closure))
+#44 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#45 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks->handle(Object(Illuminate/Http/Request), Object(Closure))
+#46 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePathEncoding.php(28): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#47 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate/Http/Middleware/ValidatePathEncoding->handle(Object(Illuminate/Http/Request), Object(Closure))
+#48 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate/Pipeline/Pipeline->Illuminate/Pipeline/{closure}(Object(Illuminate/Http/Request))
+#49 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(175): Illuminate/Pipeline/Pipeline->then(Object(Closure))
+#50 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(144): Illuminate/Foundation/Http/Kernel->sendRequestThroughRouter(Object(Illuminate/Http/Request))
+#51 D:/dev/ewards-learning-hub/public/index.php(51): Illuminate/Foundation/Http/Kernel->handle(Object(Illuminate/Http/Request))
+#52 D:/ProjectCache/ewards-vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('D://dev//ewards-l...')
+#53 {main}
+"} 

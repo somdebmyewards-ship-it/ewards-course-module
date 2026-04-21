@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eWards WhatsApp Bot — Customer Interaction Prototype</title>
+<style>
+:root {
+  --wa-bg: #e5ddd5;
+  --wa-green: #25D366;
+  --wa-dark: #075E54;
+  --wa-header: #128C7E;
+  --wa-input-bg: #f0f0f0;
+  --wa-out: #dcf8c6;
+  --wa-in: #fff;
+  --wa-time: #999;
+  --wa-blue: #34B7F1;
+  --primary: #6c478a;
+  --font: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --bg: #f0ebe5;
+  --white: #fff;
+  --text: #111b21;
+  --text-muted: #667781;
+  --border: #e9edef;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; display: flex; flex-direction: column; align-items: center; padding: 14px 16px; }
+
+/* ═══ FLOW BAR ═══ */
+.flow-bar { background: var(--white); border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; max-width: 1200px; }
+.flow-bar-label { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.flow-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--white); font-size: 12px; cursor: pointer; transition: all 0.15s; color: var(--text-muted); }
+.flow-btn:hover { border-color: var(--wa-dark); color: var(--wa-dark); }
+.flow-btn.active { background: var(--wa-dark); color: var(--white); border-color: var(--wa-dark); }
+.nav-btns { display: flex; gap: 6px; margin-left: auto; }
+.nav-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--white); font-size: 12px; cursor: pointer; color: var(--text-muted); }
+.nav-btn:hover { border-color: var(--wa-dark); color: var(--wa-dark); }
+
+/* ═══ BREADCRUMB ═══ (eWards purple theme) */
+.bc { display: flex; align-items: center; gap: 0; margin-bottom: 16px; width: 100%; max-width: 1200px; }
+.bc-s { display: flex; align-items: center; gap: 4px; padding: 5px 12px; font-size: 11px; color: var(--text-muted); background: var(--white); border: 1px solid var(--border); }
+.bc-s:first-child { border-radius: 6px 0 0 6px; }
+.bc-s:last-child { border-radius: 0 6px 6px 0; }
+.bc-s.done { background: #f3ebfc; color: #6B2FA0; border-color: #d3adf7; }
+.bc-s.now { background: #6B2FA0; color: var(--white); border-color: #6B2FA0; font-weight: 600; }
+.bc-s.soon { opacity: 0.4; }
+.bc-n { width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+.bc-s.now .bc-n { background: rgba(255,255,255,0.25); }
+.bc-s.done .bc-n { background: #6B2FA0; color: var(--white); }
+.bc-a { color: var(--border); margin: 0 -1px; font-size: 14px; z-index: 1; }
+
+/* ═══ HINT ═══ */
+.hint { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 8px 14px; font-size: 12px; color: #856404; margin-bottom: 16px; width: 100%; max-width: 1200px; display: flex; align-items: center; gap: 8px; }
+
+/* ═══ PHONE FRAME ═══ */
+.phone-frame { width: 380px; border-radius: 24px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1); background: var(--wa-bg); border: 3px solid #222; }
+.wa-header { background: var(--wa-header); color: var(--white); padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+.wa-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--wa-dark); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--white); }
+.wa-header-info h4 { font-size: 14px; font-weight: 500; }
+.wa-header-info small { font-size: 11px; opacity: 0.8; }
+.wa-bg-pattern { background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c9b99a' fill-opacity='0.12'%3E%3Cpath d='M30 0l30 30-30 30L0 30z'/%3E%3C/g%3E%3C/svg%3E") var(--wa-bg); }
+.chat-area { height: 400px; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; scroll-behavior: smooth; }
+.wa-input-bar { background: var(--wa-input-bg); padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
+.wa-input { flex: 1; border: none; border-radius: 20px; padding: 8px 16px; font-size: 14px; background: var(--white); outline: none; font-family: var(--font); }
+.wa-send { width: 36px; height: 36px; border-radius: 50%; background: var(--wa-dark); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+.wa-send:hover { transform: scale(1.05); }
+.wa-send:active { transform: scale(0.95); }
+.wa-send svg { fill: var(--white); }
+
+/* ═══ CHAT BUBBLES ═══ */
+.msg { max-width: 85%; padding: 6px 10px; border-radius: 8px; font-size: 14px; line-height: 1.45; position: relative; word-wrap: break-word; animation: fadeUp 0.25s ease; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.msg-out { background: var(--wa-out); align-self: flex-end; border-radius: 8px 0 8px 8px; }
+.msg-in { background: var(--wa-in); align-self: flex-start; border-radius: 0 8px 8px 8px; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+.msg-time { font-size: 10px; color: var(--wa-time); text-align: right; margin-top: 2px; }
+.msg b { font-weight: 600; }
+.msg-date { text-align: center; margin: 8px 0; }
+.msg-date span { background: rgba(255,255,255,0.85); padding: 4px 14px; border-radius: 8px; font-size: 11px; color: var(--text-muted); box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+
+/* ═══ QUICK REPLY BUTTONS ═══ */
+.wa-buttons { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.wa-btn { background: var(--white); border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px; text-align: center; font-size: 13px; color: var(--wa-blue); font-weight: 500; cursor: pointer; transition: background 0.15s; }
+.wa-btn:hover { background: #f5f5f5; }
+.wa-btn.pulse { position: relative; border-color: var(--wa-blue); }
+.wa-btn.pulse::after { content: ''; position: absolute; top: 6px; right: 8px; width: 8px; height: 8px; background: var(--wa-blue); border-radius: 50%; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.8); opacity: 0.3; } 100% { transform: scale(1); opacity: 1; } }
+
+/* ═══ TYPING INDICATOR ═══ */
+.typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; }
+.typing-dot { width: 6px; height: 6px; background: #999; border-radius: 50%; animation: typeBounce 1.2s infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typeBounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+/* ═══ COUPON CARD ═══ */
+.coupon-item { border-bottom: 1px dashed #e0e0e0; padding: 6px 0; }
+.coupon-item:last-child { border: none; }
+.coupon-name { font-weight: 600; font-size: 13px; }
+.coupon-code { font-family: monospace; font-weight: 600; color: var(--wa-dark); font-size: 13px; }
+.coupon-exp { font-size: 11px; color: var(--text-muted); }
+
+/* ═══ INFO PANEL ═══ */
+.info-panel { background: var(--white); border-radius: 12px; padding: 16px 20px; margin-top: 16px; width: 100%; max-width: 1200px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
+.info-panel h4 { font-size: 14px; color: var(--wa-dark); margin-bottom: 8px; }
+.info-row { display: flex; gap: 8px; font-size: 12px; margin-bottom: 4px; }
+.info-label { color: var(--text-muted); min-width: 120px; }
+.info-val { font-weight: 500; }
+
+/* ═══ LAYOUT ═══ */
+.main-layout { display: flex; flex-wrap: wrap; gap: 20px; width: 100%; max-width: 1200px; align-items: flex-start; justify-content: center; }
+.side-info { flex: 1 1 320px; min-width: 280px; max-width: 100%; }
+.side-info .card { background: var(--white); border-radius: 12px; padding: 16px 20px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); margin-bottom: 12px; }
+.side-info .card h4 { font-size: 13px; color: var(--wa-dark); margin-bottom: 10px; font-weight: 700; }
+.step-list { list-style: none; }
+.step-list li { padding: 4px 0; font-size: 12px; color: var(--text-muted); display: flex; align-items: flex-start; gap: 6px; }
+.step-list li.active { color: var(--text); font-weight: 600; }
+.step-list li.done { color: var(--wa-dark); }
+.step-list .si { width: 18px; height: 18px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.step-list li.active .si { background: var(--wa-dark); color: var(--white); }
+.step-list li.done .si { background: #dcf8c6; color: var(--wa-dark); }
+.api-box { background: #f8f8f8; border-radius: 6px; padding: 8px 10px; font-family: monospace; font-size: 11px; color: #555; margin-top: 6px; word-break: break-all; }
+</style>
+</head>
+<body>
+
+<!-- ═══ FLOW BAR ═══ -->
+<div class="flow-bar">
+  <span class="flow-bar-label">Customer flows:</span>
+  <button class="flow-btn active" id="fb-1" onclick="startFlow(1)">OTP lookup</button>
+  <button class="flow-btn" id="fb-2" onclick="startFlow(2)">Points balance</button>
+  <button class="flow-btn" id="fb-3" onclick="startFlow(3)">Coupon list</button>
+  <button class="flow-btn" id="fb-4" onclick="startFlow(4)">New member enrollment</button>
+  <button class="flow-btn" id="fb-5" onclick="startFlow(5)">Unregistered user</button>
+  <div class="nav-btns">
+    <button class="nav-btn" onclick="goBack()">← Back</button>
+    <button class="nav-btn" onclick="resetFlow()">↺ Reset</button>
+  </div>
+</div>
+
+<!-- ═══ BREADCRUMB ═══ -->
+<div class="bc" id="breadcrumb"></div>
+
+<!-- ═══ HINT ═══ -->
+<div class="hint" id="hint">👆 Click "Send" or type a keyword to start the conversation</div>
+
+<!-- ═══ MAIN LAYOUT ═══ -->
+<div class="main-layout">
+
+  <!-- PHONE -->
+  <div class="phone-frame">
+    <div class="wa-header">
+      <div class="wa-avatar">☕</div>
+      <div class="wa-header-info">
+        <h4 id="wa-biz-name">Coffee To Go</h4>
+        <small>Business Account · online</small>
+      </div>
+    </div>
+    <div class="chat-area wa-bg-pattern" id="chat">
+      <div class="msg-date"><span>Today</span></div>
+    </div>
+    <div class="wa-input-bar">
+      <input type="text" class="wa-input" id="msg-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="wa-send" onclick="sendMsg()">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- SIDE INFO -->
+  <div class="side-info">
+    <div class="card">
+      <h4>Flow steps</h4>
+      <ul class="step-list" id="step-list"></ul>
+    </div>
+    <div class="card">
+      <h4>Behind the scenes</h4>
+      <div id="api-info" style="font-size:12px;color:var(--text-muted)">
+        Start a flow to see the backend processing steps.
+      </div>
+    </div>
+    <div class="card">
+      <h4>Test merchant</h4>
+      <div style="font-size:12px">
+        <div class="info-row"><span class="info-label">Merchant</span><span class="info-val">Coffee To Go</span></div>
+        <div class="info-row"><span class="info-label">ID</span><span class="info-val">15657</span></div>
+        <div class="info-row"><span class="info-label">Provider</span><span class="info-val">Gupshup</span></div>
+        <div class="info-row"><span class="info-label">WABA</span><span class="info-val" style="font-family:monospace">916292209006</span></div>
+        <div class="info-row"><span class="info-label">Customer</span><span class="info-val">917063122477</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var currentFlow = 1;
+var currentStep = 0;
+var flowHistory = [];
+var autoTimer = null;
+
+var FLOWS = {
+  1: {
+    name: 'OTP Lookup',
+    keyword: 'otp',
+    steps: [
+      { label: 'Customer sends "otp"', type: 'send' },
+      { label: 'Bot processes webhook', type: 'auto' },
+      { label: 'Bot replies with OTP', type: 'auto' },
+      { label: 'Done', type: 'done' }
+    ],
+    hints: [
+      'Type "otp" and click Send (or just click Send — it\'s pre-filled)',
+      'Processing webhook through 11 steps...',
+      'OTP found and sent back to customer',
+      'Flow complete! Customer received their OTP.'
+    ],
+    messages: [
+      { dir: 'out', text: 'otp' },
+      null,
+      { dir: 'in', text: 'Your OTP is <b>847291</b>', delay: 1200 },
+    ],
+    apis: [
+      '',
+      '<b>Controller flow:</b><br>Step 1: Provider loaded (gupshup)<br>Step 2: Merchant found (15657)<br>Step 3: Permission OK<br>Step 4: Signature OK<br>Step 5: Message extracted<br>Step 6: Dedup passed<br>Step 7: Intent → OTP_FETCH<br>Step 8: Feature gate OK<br>Step 9: OtpHandler.run()<div class="api-box">SELECT otp FROM temp_redeem WHERE user_id = 56562291 AND merchant_id = 15657 AND created_at >= NOW() - INTERVAL 10 MINUTE</div>',
+      '<b>Step 10:</b> Send via Gupshup<div class="api-box">POST mediaapi.smsgupshup.com/GatewayAPI/rest<br>method=SendMessage&send_to=917063122477<br>msg=Your OTP is 847291</div><b>Step 11:</b> Logged to inbound_interaction_logs',
+    ]
+  },
+  2: {
+    name: 'Points Balance',
+    keyword: 'points',
+    steps: [
+      { label: 'Customer sends "points"', type: 'send' },
+      { label: 'Bot processes webhook', type: 'auto' },
+      { label: 'Bot replies with balance', type: 'auto' },
+      { label: 'Done', type: 'done' }
+    ],
+    hints: [
+      'Type "points" and click Send',
+      'Processing — finding user and card...',
+      'Points balance found and sent back',
+      'Flow complete! Customer knows their balance.'
+    ],
+    messages: [
+      { dir: 'out', text: 'points' },
+      null,
+      { dir: 'in', text: 'Your current loyalty points balance is <b>2,450</b> points.', delay: 1000 },
+    ],
+    apis: [
+      '',
+      '<b>Controller flow:</b><br>Step 7: Intent → LOYALTY_CHECK<br>Step 9: LoyaltyHandler.run()<div class="api-box">SELECT id FROM users WHERE mobile = \'7063122477\' AND country_code = \'91\'<br>→ user_id: 56562291<br><br>SELECT current_points FROM cards WHERE user_id = 56562291 AND merchant_id = 15657<br>→ current_points: 2450</div>',
+      '<b>Step 10:</b> Send reply via Gupshup<br><b>Step 11:</b> Logged',
+    ]
+  },
+  3: {
+    name: 'Coupon List',
+    keyword: 'coupon',
+    steps: [
+      { label: 'Customer sends "coupon"', type: 'send' },
+      { label: 'Bot queries 4 sources', type: 'auto' },
+      { label: 'Bot replies with coupons', type: 'auto' },
+      { label: 'Done', type: 'done' }
+    ],
+    hints: [
+      'Type "coupon" and click Send',
+      'Querying all 4 coupon sources...',
+      'Coupons aggregated, sorted by expiry, and sent',
+      'Flow complete! Customer sees their active coupons.'
+    ],
+    messages: [
+      { dir: 'out', text: 'coupon' },
+      null,
+      { dir: 'in', text: '🎟 You have <b>3</b> active coupon(s)!\n\n<b>1.</b> Flat 20% Off Weekend\n    Code: <b>WKND20</b>\n    Valid till: 25 Mar 2026\n\n<b>2.</b> Buy 1 Get 1 Coffee\n    Code: <b>BOGO-COFFEE</b>\n    Valid till: 30 Mar 2026\n\n<b>3.</b> Rs.100 Off on Rs.500+\n    Code: <b>SAVE100</b>\n    Valid till: 15 Apr 2026', delay: 1500 },
+    ],
+    apis: [
+      '',
+      '<b>Step 9:</b> CouponHandler.run() — 4 sources:<div class="api-box">Source 1: user_token + tokens → 1 coupon<br>Source 2: coupon + rewards → 1 coupon<br>Source 3: close_end_promo → 1 coupon<br>Source 4: employee_discount → 0 coupons<br><br>Total: 3 coupons<br>Sorted by expiry (soonest first)<br>Max display: 5</div>',
+      '<b>Step 10:</b> Send formatted reply via Gupshup<br><b>Step 11:</b> Logged',
+    ]
+  },
+  4: {
+    name: 'New Member Enrollment',
+    keyword: 'join',
+    steps: [
+      { label: 'Customer sends "join"', type: 'send' },
+      { label: 'Bot sends enrollment prompt', type: 'auto' },
+      { label: 'Customer confirms "YES"', type: 'send' },
+      { label: 'Bot creates card (6+ tables)', type: 'auto' },
+      { label: 'Welcome message sent', type: 'auto' },
+      { label: 'Done', type: 'done' }
+    ],
+    hints: [
+      'Type "join" and click Send',
+      'Bot checks if user is already a member...',
+      'Type "yes" and click Send to confirm enrollment',
+      'Creating card across 6+ tables...',
+      'Welcome message with instructions sent',
+      'Flow complete! Customer is now a member.'
+    ],
+    messages: [
+      { dir: 'out', text: 'join' },
+      { dir: 'in', text: 'Would you like to join <b>Coffee To Go</b> as a member?\n\nAs a member you\'ll get loyalty points, exclusive coupons, and special offers.\n\nReply <b>YES</b> to join.', delay: 1000 },
+      { dir: 'out', text: 'yes' },
+      null,
+      { dir: 'in', text: 'Welcome! 🎉 You\'re now a member of <b>Coffee To Go</b>.\n\nYou can now:\n• Type <b>Points</b> to check your loyalty balance\n• Type <b>Coupons</b> to see available offers\n• Type <b>OTP</b> to get your verification code', delay: 1800 },
+    ],
+    apis: [
+      '',
+      '<b>Step 7:</b> Intent → ADD_MEMBER<br><b>Step 9:</b> AddMemberHandler.run()<div class="api-box">findUser(7063122477, 91) → user_id: 56562291<br>Check cards → no card found<br>INSERT whatsapp_pending_actions (expires 10 min)</div>',
+      '',
+      '<b>Step 7:</b> resolveIntent("yes") → checkPendingAction() → ADD_MEMBER_CONFIRM<br><b>Step 9:</b> handleConfirmation() → createCard()<div class="api-box">INSERT cards (75+ columns, ALL NOT NULL)<br>INSERT parameter_table<br>UPDATE login_wise_parameter +1<br>UPDATE login_wise_parameter_daily +1<br>INSERT merchant_login_user_lifetime<br>INSERT outlet_request<br>DELETE whatsapp_pending_actions</div>',
+      '<b>Step 10:</b> Send welcome reply<br><b>Step 11:</b> Logged',
+    ]
+  },
+  5: {
+    name: 'Unregistered User',
+    keyword: 'points',
+    steps: [
+      { label: 'Customer sends "points"', type: 'send' },
+      { label: 'Bot can\'t find user', type: 'auto' },
+      { label: 'Customer sends "join"', type: 'send' },
+      { label: 'Bot creates user + prompts', type: 'auto' },
+      { label: 'Customer confirms "YES"', type: 'send' },
+      { label: 'Card created + welcome', type: 'auto' },
+      { label: 'Done', type: 'done' }
+    ],
+    hints: [
+      'Type "points" and click Send — this user is not registered',
+      'User not found — bot suggests registration',
+      'Type "join" and click Send to start enrollment',
+      'Bot creates user in users table, then prompts confirmation',
+      'Type "yes" to confirm',
+      'Card created, welcome message sent',
+      'Full flow: unregistered → registered → member!'
+    ],
+    messages: [
+      { dir: 'out', text: 'points' },
+      { dir: 'in', text: 'This mobile number is not registered. Please sign up at the store, or reply <b>Join</b> to sign up here.', delay: 1000 },
+      { dir: 'out', text: 'join' },
+      { dir: 'in', text: 'Would you like to join <b>Coffee To Go</b> as a member?\n\nAs a member you\'ll get loyalty points, exclusive coupons, and special offers.\n\nReply <b>YES</b> to join now.', delay: 1200 },
+      { dir: 'out', text: 'yes' },
+      { dir: 'in', text: 'Welcome! 🎉 You\'re now a member of <b>Coffee To Go</b>.\n\nYou can now:\n• Type <b>Points</b> to check your loyalty balance\n• Type <b>Coupons</b> to see available offers\n• Type <b>OTP</b> to get your verification code', delay: 1800 },
+    ],
+    apis: [
+      '',
+      '<b>Step 9:</b> LoyaltyHandler → findMember()<div class="api-box">SELECT id FROM users WHERE mobile = \'9876543210\' → NOT FOUND<br><br>Returns: "not registered... reply Join"</div>',
+      '',
+      '<b>Step 9:</b> AddMemberHandler.handleInitialRequest()<div class="api-box">findUser() → NOT FOUND<br>createUser():<br>  INSERT users (mobile, user_type=1, source=whatsapp)<br>  INSERT user_details<br>INSERT whatsapp_pending_actions</div>',
+      '',
+      '<b>Step 9:</b> handleConfirmation() → createCard()<div class="api-box">INSERT cards (75+ columns)<br>INSERT parameter_table<br>UPDATE login_wise_parameter<br>UPDATE login_wise_parameter_daily<br>INSERT merchant_login_user_lifetime<br>INSERT outlet_request</div>',
+    ]
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+//  FLOW MANAGEMENT
+// ═══════════════════════════════════════════════════════
+
+function startFlow(n) {
+  currentFlow = n;
+  currentStep = 0;
+  flowHistory = [0];
+  clearTimeout(autoTimer);
+  document.querySelectorAll('.flow-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('fb-' + n).classList.add('active');
+  var chat = document.getElementById('chat');
+  chat.innerHTML = '<div class="msg-date"><span>Today</span></div>';
+  document.getElementById('msg-input').value = FLOWS[n].keyword;
+  renderBreadcrumb();
+  renderHint();
+  renderStepList();
+  renderApiInfo();
+}
+
+function goBack() {
+  if (flowHistory.length > 1) {
+    flowHistory.pop();
+    currentStep = flowHistory[flowHistory.length - 1];
+    renderBreadcrumb();
+    renderHint();
+    renderStepList();
+    renderApiInfo();
+  }
+}
+
+function resetFlow() { startFlow(currentFlow); }
+
+function advanceStep() {
+  var flow = FLOWS[currentFlow];
+  if (currentStep < flow.steps.length - 1) {
+    currentStep++;
+    flowHistory.push(currentStep);
+    renderBreadcrumb();
+    renderHint();
+    renderStepList();
+    renderApiInfo();
+
+    var step = flow.steps[currentStep];
+    if (step.type === 'auto') {
+      var msg = flow.messages[currentStep];
+      if (msg) {
+        showTyping();
+        autoTimer = setTimeout(function() {
+          hideTyping();
+          addMessage(msg.dir, msg.text);
+          if (currentStep < flow.steps.length - 1 && flow.steps[currentStep + 1].type === 'auto') {
+            autoTimer = setTimeout(advanceStep, 600);
+          } else {
+            autoTimer = setTimeout(advanceStep, 400);
+          }
+        }, msg.delay || 800);
+      } else {
+        autoTimer = setTimeout(advanceStep, 500);
+      }
+    } else if (step.type === 'send') {
+      var nextKw = flow.messages[currentStep] ? flow.messages[currentStep].text : '';
+      document.getElementById('msg-input').value = nextKw;
+    } else if (step.type === 'done') {
+      document.getElementById('msg-input').value = '';
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  SEND MESSAGE
+// ═══════════════════════════════════════════════════════
+
+function sendMsg() {
+  var input = document.getElementById('msg-input');
+  var text = input.value.trim();
+  if (!text) return;
+  addMessage('out', text);
+  input.value = '';
+  advanceStep();
+}
+
+function addMessage(dir, text) {
+  var chat = document.getElementById('chat');
+  var div = document.createElement('div');
+  div.className = 'msg msg-' + (dir === 'out' ? 'out' : 'in');
+  var time = new Date();
+  var timeStr = time.getHours().toString().padStart(2,'0') + ':' + time.getMinutes().toString().padStart(2,'0');
+  div.innerHTML = text.replace(/\n/g, '<br>') + '<div class="msg-time">' + timeStr + '</div>';
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showTyping() {
+  var chat = document.getElementById('chat');
+  var div = document.createElement('div');
+  div.className = 'msg msg-in';
+  div.id = 'typing-indicator';
+  div.innerHTML = '<div class="typing"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function hideTyping() {
+  var el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+// ═══════════════════════════════════════════════════════
+//  BREADCRUMB
+// ═══════════════════════════════════════════════════════
+
+function renderBreadcrumb() {
+  var steps = FLOWS[currentFlow].steps;
+  var html = '';
+  for (var i = 0; i < steps.length; i++) {
+    var cls = i < currentStep ? 'done' : (i === currentStep ? 'now' : 'soon');
+    var num = i < currentStep ? '✓' : (i + 1);
+    if (i > 0) html += '<span class="bc-a">›</span>';
+    html += '<div class="bc-s ' + cls + '"><span class="bc-n">' + num + '</span>' + steps[i].label + '</div>';
+  }
+  document.getElementById('breadcrumb').innerHTML = html;
+}
+
+function renderHint() {
+  var hints = FLOWS[currentFlow].hints;
+  var el = document.getElementById('hint');
+  el.innerHTML = '👆 ' + (hints[currentStep] || '');
+}
+
+// ═══════════════════════════════════════════════════════
+//  SIDE PANEL
+// ═══════════════════════════════════════════════════════
+
+function renderStepList() {
+  var steps = FLOWS[currentFlow].steps;
+  var html = '';
+  for (var i = 0; i < steps.length; i++) {
+    var cls = i < currentStep ? 'done' : (i === currentStep ? 'active' : '');
+    var num = i < currentStep ? '✓' : (i + 1);
+    var icon = steps[i].type === 'send' ? '📱' : (steps[i].type === 'auto' ? '⚙' : '✅');
+    html += '<li class="' + cls + '"><span class="si">' + num + '</span>' + icon + ' ' + steps[i].label + '</li>';
+  }
+  document.getElementById('step-list').innerHTML = html;
+}
+
+function renderApiInfo() {
+  var apis = FLOWS[currentFlow].apis;
+  var el = document.getElementById('api-info');
+  if (apis[currentStep]) {
+    el.innerHTML = apis[currentStep];
+  } else {
+    el.innerHTML = '<span style="color:#999">Customer action — waiting for input...</span>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+
+startFlow(1);
+</script>
+</body>
+</html>
