@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\ProfileController;
 
 // Training controllers
 use App\Http\Controllers\Training\ModuleController;
@@ -35,6 +38,9 @@ use App\Http\Controllers\ContentManager\QuizCrudController;
 use App\Http\Controllers\ContentManager\MediaUploadController;
 use App\Http\Controllers\ContentManager\ChunkUploadController;
 use App\Http\Controllers\Training\ChatbotController;
+use App\Http\Controllers\Training\BadgeController;
+use App\Http\Controllers\Training\LeaderboardController;
+use App\Http\Controllers\Training\StatsController;
 
 // Health check (keep-alive for Render free tier)
 Route::get('health', fn () => response()->json(['status' => 'ok', 'ts' => now()->toISOString()]));
@@ -43,6 +49,8 @@ Route::get('health', fn () => response()->json(['status' => 'ok', 'ts' => now()-
 Route::prefix('auth')->group(function () {
     Route::post('register', [RegisterController::class, 'store']);
     Route::post('login', [LoginController::class, 'store']);
+    Route::post('forgot-password', [ForgotPasswordController::class, 'store']);
+    Route::post('reset-password', [ResetPasswordController::class, 'store']);
 });
 
 
@@ -50,6 +58,8 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [LogoutController::class, 'destroy']);
     Route::get('me', [LoginController::class, 'me']);
+    Route::get('profile', [ProfileController::class, 'show']);
+    Route::put('profile', [ProfileController::class, 'update']);
 
     // User routes
     Route::group([], function () {
@@ -85,6 +95,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('section-views', [SectionViewController::class, 'store']);
         Route::get('section-views', [SectionViewController::class, 'index']);
         Route::get('module-route', [ModuleRouteController::class, 'lookup']);
+
+        Route::get('leaderboard', [LeaderboardController::class, 'index']);
+        Route::get('stats', [StatsController::class, 'me']);
+        Route::get('points', fn(\Illuminate\Http\Request $r) => response()->json(
+            \App\Models\PointsLedger::where('user_id', $r->user()->id)
+                ->orderByDesc('created_at')->take(50)
+                ->get(['id','points','reason','module_id','balance_after','created_at'])
+                ->map(fn($row) => array_merge($row->toArray(), ['reason_label' => $row->reason_label]))
+        ));
+
+        Route::get('badges/mine', [BadgeController::class, 'mine']);
+        Route::get('badges/user/{userId}', [BadgeController::class, 'forUser']);
 
         // G1: Global cross-module chatbot (Ela) — rate limited
         Route::middleware('throttle:15,1')->post('chatbot/ask', [ChatbotController::class, 'ask']);

@@ -151,8 +151,8 @@ Log in as **Cashier (approved)**.
 
 | # | Test | Steps | Expected |
 |---|---|---|---|
-| 5.1 | My Progress page | Navigate to /my-progress | Module progress cards, points ledger visible |
-| 5.2 | Points ledger | Scroll to ledger section | Each row shows points, reason label (e.g. "Module completed", "Quiz bonus"), date |
+| 5.1 | My Progress page | Navigate to /my-progress | Module progress cards visible; each completed module shows its points reward |
+| 5.2 | Points ledger (API) | `GET /api/v1/points` (authenticated) | Returns last 50 transactions; each row has `points`, `reason_label` (e.g. "Module completed", "Quiz bonus"), `balance_after`, `created_at` |
 | 5.3 | Level badge | Check header/profile area | Level shows: Beginner (0–99), Practitioner (100–249), Specialist (250–499), Expert (500+) |
 | 5.4 | Key Takeaways | Navigate to /takeaways | List of completed module takeaways |
 
@@ -176,7 +176,7 @@ Log in as **Cashier (approved)**.
 | # | Test | Steps | Expected |
 |---|---|---|---|
 | 7.1 | Badge earned on completion | Complete a module | Badge award appears in completion modal (if badge criteria met) |
-| 7.2 | My badges | Navigate to profile or /badges | Earned badges listed with award date |
+| 7.2 | My badges | Navigate to /profile → scroll to "My Badges" section | Earned badges listed with emoji icon, name, and award date |
 
 ---
 

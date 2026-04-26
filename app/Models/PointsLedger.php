@@ -14,6 +14,19 @@ class PointsLedger extends Model
 
     public function user() { return $this->belongsTo(User::class); }
 
+    private static array $labels = [
+        'module_complete'   => 'Module completed',
+        'quiz_bonus'        => 'Quiz bonus',
+        'prototype_complete'=> 'Prototype completed',
+        'checklist_complete'=> 'Checklist completed',
+        'admin_grant'       => 'Admin grant',
+    ];
+
+    public function getReasonLabelAttribute(): string
+    {
+        return self::$labels[$this->reason] ?? ucfirst(str_replace('_', ' ', $this->reason));
+    }
+
     /**
      * H2: Record a points transaction. Call AFTER incrementing user.points.
      */
