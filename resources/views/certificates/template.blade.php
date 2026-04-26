@@ -121,7 +121,7 @@
     </span>
 
     <span style="display: inline-block; width: 19%; text-align: center; vertical-align: top;">
-      <span style="font-size: 12px; font-weight: bold; color: #e8d5ff;">eWards Training Team</span><br/>
+      <span style="font-size: 12px; font-weight: bold; color: #e8d5ff;">{{ config('lms.certificate_signatory', 'eWards Training Team') }}</span><br/>
       <span style="display: inline-block; width: 100px; border-bottom: 1px solid #D4A843; margin: 4px 0 3px;"></span><br/>
       <span style="font-size: 6.5px; color: #b8a0d4; letter-spacing: 1.5px;">AUTHORISED SIGNATORY</span>
     </span>
