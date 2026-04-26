@@ -11,37 +11,28 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Each block is wrapped in try-catch: TiDB Cloud partial runs may have
-        // already added some indexes without recording this migration.
-        try {
-            Schema::table('lms_bookmarks', function (Blueprint $table) {
-                $table->index(['user_id', 'module_id'], 'bk_user_module_idx');
-            });
-        } catch (\Throwable $e) {}
+        // Bookmarks: user_id + module_id (common query pattern)
+        Schema::table('lms_bookmarks', function (Blueprint $table) {
+            $table->index(['user_id', 'module_id'], 'bk_user_module_idx');
+        });
 
-        try {
-            Schema::table('lms_certificates', function (Blueprint $table) {
-                $table->index(['user_id', 'certificate_type'], 'cert_user_type_idx');
-            });
-        } catch (\Throwable $e) {}
+        // Certificates: composite unique already exists via cert_user_type_module
+        // Redundant non-unique index removed — covered by the unique composite.
 
-        try {
-            Schema::table('lms_quiz_attempts', function (Blueprint $table) {
-                $table->index(['user_id', 'module_id'], 'qa_user_module_idx');
-            });
-        } catch (\Throwable $e) {}
+        // Quiz attempts: user_id + module_id (analytics queries)
+        Schema::table('lms_quiz_attempts', function (Blueprint $table) {
+            $table->index(['user_id', 'module_id'], 'qa_user_module_idx');
+        });
 
-        try {
-            Schema::table('lms_progress', function (Blueprint $table) {
-                $table->index('user_id', 'tp_user_idx');
-            });
-        } catch (\Throwable $e) {}
+        // Training progress: user_id index (already has unique on user_id+module_id, but single col helps)
+        Schema::table('lms_progress', function (Blueprint $table) {
+            $table->index('user_id', 'tp_user_idx');
+        });
 
-        try {
-            Schema::table('lms_module_feedback', function (Blueprint $table) {
-                $table->index('module_id', 'mf_module_idx');
-            });
-        } catch (\Throwable $e) {}
+        // Module feedback: module_id index for analytics aggregation
+        Schema::table('lms_module_feedback', function (Blueprint $table) {
+            $table->index('module_id', 'mf_module_idx');
+        });
     }
 
     public function down(): void
@@ -49,9 +40,7 @@ return new class extends Migration
         Schema::table('lms_bookmarks', function (Blueprint $table) {
             $table->dropIndex('bk_user_module_idx');
         });
-        Schema::table('lms_certificates', function (Blueprint $table) {
-            $table->dropIndex('cert_user_type_idx');
-        });
+        // cert_user_type_idx no longer created — nothing to drop
         Schema::table('lms_quiz_attempts', function (Blueprint $table) {
             $table->dropIndex('qa_user_module_idx');
         });

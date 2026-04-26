@@ -22,7 +22,7 @@ return [
     // ── Hybrid Search (BM25 + Vector + Reranker) ────────────────────
     // 'vector' = pure cosine similarity (original behavior)
     // 'hybrid' = BM25 + Vector + Reranker (reduces hallucination)
-    'retrieval_mode' => env('AI_RETRIEVAL_MODE', 'vector'),
+    'retrieval_mode' => env('AI_RETRIEVAL_MODE', 'hybrid'),
 
     'bm25' => [
         'top_k' => (int) env('AI_BM25_TOP_K', 20), // candidates before reranking

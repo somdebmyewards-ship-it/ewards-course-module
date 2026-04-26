@@ -13,7 +13,7 @@ class TrainingProgress extends Model
         'checklist_state', 'checklist_completed', 'checklist_completed_at',
         'prototype_completed', 'prototype_completed_at', 'prototype_progress',
         'quiz_completed', 'quiz_completed_at', 'quiz_score', 'quiz_answers',
-        'module_completed', 'module_completed_at', 'points_awarded', 'last_section_id',
+        'module_completed', 'module_completed_at', 'last_section_id',
     ];
 
     protected $casts = [
@@ -22,7 +22,6 @@ class TrainingProgress extends Model
         'prototype_completed' => 'boolean',
         'quiz_completed' => 'boolean',
         'module_completed' => 'boolean',
-        'points_awarded' => 'boolean',
         'checklist_state' => 'array',
         'prototype_progress' => 'array',
         'quiz_score' => 'integer',

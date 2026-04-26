@@ -7,16 +7,12 @@ use App\Models\TrainingProgress;
 use App\Models\TrainingQuiz;
 use App\Models\PointsLedger;
 use App\Services\CompletionService;
-use App\Services\BadgeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class QuizController extends Controller
 {
-    public function __construct(
-        private CompletionService $completion,
-        private BadgeService $badges,
-    ) {}
+    public function __construct(private CompletionService $completion) {}
 
     public function submit(Request $request, int $moduleId)
     {
@@ -70,11 +66,6 @@ class QuizController extends Controller
         $passingPercent = $quizMeta ? $quizMeta->passing_percent : 75;
         $passed = $score >= $passingPercent;
 
-        // Detect first attempt before the transaction updates the record
-        $existingProgress = TrainingProgress::where('user_id', $request->user()->id)
-            ->where('module_id', $moduleId)->first();
-        $isFirstAttempt = $existingProgress === null || $existingProgress->quiz_score === null;
-
         // A2: Transaction wrapping multi-step writes
         $responseData = DB::transaction(function () use ($request, $module, $moduleId, $passed, $score, $correctCount, $totalQuestions, $results) {
             $userId = $request->user()->id;
@@ -113,16 +104,6 @@ class QuizController extends Controller
 
             return $data;
         });
-
-        // Badge awards happen outside the transaction (non-blocking)
-        if ($passed) {
-            $this->badges->onQuizPassed(
-                $request->user()->id,
-                $score === 100,
-                $isFirstAttempt
-            );
-            $this->badges->onPointsChanged($request->user()->fresh());
-        }
 
         return response()->json($responseData);
     }

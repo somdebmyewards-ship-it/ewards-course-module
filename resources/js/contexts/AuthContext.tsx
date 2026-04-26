@@ -25,16 +25,10 @@ interface AuthCtx {
 const AuthContext = createContext<AuthCtx>({} as AuthCtx);
 export const useAuth = () => useContext(AuthContext);
 
-function parseStoredUser(): User | null {
-  try { return JSON.parse(localStorage.getItem('user') || ''); } catch { return null; }
-}
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const storedUser = parseStoredUser();
-  const [user, setUser]   = useState<User | null>(storedUser);
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-  // Skip loading spinner if we have a cached user — /me validates in background
-  const [loading, setLoading] = useState<boolean>(!storedUser);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Warm up the backend on every page load (prevents Render cold start)
@@ -46,16 +40,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!userData.level) userData.level = getLevel(userData.points || 0);
         setUser(userData);
         setLoading(false);
-      }).catch((err) => {
-        // Only invalidate on 401 — network errors/timeouts keep the cached user
-        if (err?.response?.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setToken(null);
-          setUser(null);
-        }
-        setLoading(false);
-      });
+      })
+        .catch(() => { localStorage.removeItem('token'); localStorage.removeItem('user'); setToken(null); setLoading(false); });
     } else { setLoading(false); }
   }, [token]);
 

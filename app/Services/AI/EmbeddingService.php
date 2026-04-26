@@ -13,7 +13,7 @@ class EmbeddingService
 {
     private string $apiKey;
     private string $model;
-    private string $baseUrl = 'https://router.huggingface.co/hf-inference/models';
+    private string $baseUrl = 'https://api-inference.huggingface.co/models';
 
     public function __construct()
     {
@@ -57,7 +57,7 @@ class EmbeddingService
         foreach (array_chunk($texts, 32) as $batch) {
             $response = Http::withToken($this->apiKey)
                 ->timeout(60)
-                ->post("{$this->baseUrl}/{$this->model}/pipeline/feature-extraction", [
+                ->post("{$this->baseUrl}/{$this->model}", [
                     'inputs' => array_values($batch),
                     'options' => ['wait_for_model' => true],
                 ]);

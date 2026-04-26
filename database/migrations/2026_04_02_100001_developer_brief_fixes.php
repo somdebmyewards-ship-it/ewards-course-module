@@ -8,12 +8,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // C1: Composite unique index on certificates (prevents duplicate issuance)
+        // C1: Ensure exactly ONE composite unique index on certificates.
+        // The earlier migration (2026_03_28) created 'cert_user_type_module' on the old table.
+        // After rename to lms_certificates, that index still exists. Only create if missing.
         if (Schema::hasTable('lms_certificates')) {
-            Schema::table('lms_certificates', function (Blueprint $table) {
-                // Unique per user + type + module (nullable module_id for path/expert certs)
-                $table->unique(['user_id', 'certificate_type', 'module_id'], 'lms_certs_user_type_module_unique');
-            });
+            $indexes = collect(Schema::getIndexes('lms_certificates'))->pluck('name')->toArray();
+
+            // If the old index name exists (from 2026_03_28 rename), we're covered
+            $hasComposite = in_array('cert_user_type_module', $indexes)
+                         || in_array('lms_certs_user_type_module_unique', $indexes);
+
+            if (!$hasComposite) {
+                Schema::table('lms_certificates', function (Blueprint $table) {
+                    $table->unique(['user_id', 'certificate_type', 'module_id'], 'lms_certs_user_type_module_unique');
+                });
+            }
         }
 
         // C5: Add soft deletes to key tables
@@ -60,9 +69,16 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('lms_certificates', function (Blueprint $table) {
-            $table->dropUnique('lms_certs_user_type_module_unique');
-        });
+        // Drop whichever composite unique index exists
+        if (Schema::hasTable('lms_certificates')) {
+            $indexes = collect(Schema::getIndexes('lms_certificates'))->pluck('name')->toArray();
+
+            if (in_array('lms_certs_user_type_module_unique', $indexes)) {
+                Schema::table('lms_certificates', function (Blueprint $table) {
+                    $table->dropUnique('lms_certs_user_type_module_unique');
+                });
+            }
+        }
 
         if (Schema::hasColumn('lms_modules', 'deleted_at')) {
             Schema::table('lms_modules', function (Blueprint $table) {

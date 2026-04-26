@@ -1,17 +1,9 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Card, Tabs, Form, Input, InputNumber, Switch, Button, Space, Spin, message, Popconfirm, Select, Divider, Tag, Checkbox, Row, Col, Badge, Tooltip, Alert, Progress } from 'antd';
-import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, DeleteOutlined, LinkOutlined, SafetyCertificateOutlined, CheckSquareOutlined, EyeOutlined, PlayCircleOutlined, FileTextOutlined, BookOutlined, CheckCircleOutlined, SettingOutlined, OrderedListOutlined, QuestionCircleOutlined, TrophyOutlined, UploadOutlined, ClockCircleOutlined, StarOutlined, EditOutlined, RobotOutlined } from '@ant-design/icons';
-import api from '@/lib/api';
+import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, DeleteOutlined, LinkOutlined, SafetyCertificateOutlined, CheckSquareOutlined, EyeOutlined, PlayCircleOutlined, FileTextOutlined, BookOutlined, CheckCircleOutlined, SettingOutlined, OrderedListOutlined, QuestionCircleOutlined, TrophyOutlined, UploadOutlined, ClockCircleOutlined, StarOutlined, EditOutlined, RobotOutlined, SyncOutlined } from '@ant-design/icons';
 import { assistantApi, AssistantStatus } from '@/lib/assistantApi';
-
-function useDebounce<T extends (...args: any[]) => any>(fn: T, delay: number): T {
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  return useCallback((...args: Parameters<T>) => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => fn(...args), delay);
-  }, [fn, delay]) as T;
-}
+import api from '@/lib/api';
 
 const { Title, Text, Paragraph } = Typography;
 const PURPLE = '#6B2FA0';
@@ -25,8 +17,11 @@ export default function ContentManagerEdit() {
   const [passingPercent, setPassingPercent] = useState<number>(75);
   const [saving, setSaving] = useState(false);
   const [aiStatus, setAiStatus] = useState<AssistantStatus | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
   const [indexing, setIndexing] = useState(false);
+
+  const fetchAiStatus = () => {
+    assistantApi.getStatus(Number(id)).then(r => setAiStatus(r.data)).catch(() => {});
+  };
 
   const fetchModule = () => {
     api.get(`/cm/modules/${id}`).then(r => {
@@ -37,18 +32,21 @@ export default function ContentManagerEdit() {
       }
       setLoading(false);
     }).catch(() => setLoading(false));
-    // Fetch AI assistant status in parallel
-    if (id) {
-      assistantApi.getStatus(Number(id)).then(setAiStatus).catch(() => {});
-    }
   };
-  useEffect(fetchModule, [id]);
+  useEffect(() => { fetchModule(); fetchAiStatus(); }, [id]);
+
+  // Poll every 3 s while indexing is in progress
+  useEffect(() => {
+    if (aiStatus?.index_status !== 'indexing') return;
+    const timer = setInterval(fetchAiStatus, 3000);
+    return () => clearInterval(timer);
+  }, [aiStatus?.index_status, id]);
 
   const saveDetails = async (values: any) => {
     setSaving(true);
     // Strip keys the backend doesn't accept and drop nulls for non-nullable columns
     const allowedKeys = [
-      'title', 'slug', 'description', 'icon', 'cover_image', 'display_order', 'video_url',
+      'title', 'slug', 'description', 'icon', 'display_order', 'video_url',
       'image_urls', 'document_urls', 'points_reward', 'estimated_minutes',
       'is_published', 'quiz_enabled', 'require_help_viewed', 'require_checklist',
       'require_quiz', 'certificate_enabled', 'page_route', 'prototype_url',
@@ -85,22 +83,6 @@ export default function ContentManagerEdit() {
     fetchModule();
   };
 
-  // Immediately reflect changes in local state so controlled inputs update instantly,
-  // then debounce the API save so we don't fire on every keystroke.
-  const _sectionDebounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-  const updateSectionDebounced = (secId: number, data: any) => {
-    // Optimistic local update — keeps the controlled input responsive
-    setMod((prev: any) => ({
-      ...prev,
-      sections: prev.sections.map((s: any) => s.id === secId ? { ...s, ...data } : s),
-    }));
-    const key = `${secId}-${Object.keys(data)[0]}`;
-    if (_sectionDebounceTimers.current[key]) clearTimeout(_sectionDebounceTimers.current[key]);
-    _sectionDebounceTimers.current[key] = setTimeout(() => {
-      api.put(`/cm/sections/${secId}`, data).catch(() => {});
-    }, 600);
-  };
-
   const deleteSection = async (secId: number) => {
     await api.delete(`/cm/sections/${secId}`);
     message.success('Section deleted');
@@ -112,17 +94,6 @@ export default function ContentManagerEdit() {
     fetchModule();
   };
   const updateChecklist = async (clId: number, data: any) => { await api.put(`/cm/checklist/${clId}`, data); fetchModule(); };
-  const _checklistTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-  const updateChecklistDebounced = (clId: number, data: any) => {
-    setMod((prev: any) => ({
-      ...prev,
-      checklists: prev.checklists.map((c: any) => c.id === clId ? { ...c, ...data } : c),
-    }));
-    if (_checklistTimers.current[clId]) clearTimeout(_checklistTimers.current[clId]);
-    _checklistTimers.current[clId] = setTimeout(() => {
-      api.put(`/cm/checklist/${clId}`, data).catch(() => {});
-    }, 600);
-  };
   const deleteChecklist = async (clId: number) => { await api.delete(`/cm/checklist/${clId}`); fetchModule(); };
 
   const addQuiz = async () => {
@@ -130,18 +101,6 @@ export default function ContentManagerEdit() {
     fetchModule();
   };
   const updateQuiz = async (qId: number, data: any) => { await api.put(`/cm/quiz/${qId}`, data); fetchModule(); };
-  const _quizTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-  const updateQuizDebounced = (qId: number, data: any) => {
-    setMod((prev: any) => ({
-      ...prev,
-      quizzes: prev.quizzes.map((q: any) => q.id === qId ? { ...q, ...data } : q),
-    }));
-    const key = `${qId}-${Object.keys(data)[0]}`;
-    if (_quizTimers.current[key]) clearTimeout(_quizTimers.current[key]);
-    _quizTimers.current[key] = setTimeout(() => {
-      api.put(`/cm/quiz/${qId}`, data).catch(() => {});
-    }, 600);
-  };
   const deleteQuiz = async (qId: number) => { await api.delete(`/cm/quiz/${qId}`); fetchModule(); };
 
   const savePassingPercent = async () => {
@@ -149,6 +108,28 @@ export default function ContentManagerEdit() {
       await api.put(`/cm/modules/${id}/quiz-metadata`, { passing_percent: passingPercent });
       message.success('Passing percent saved');
     } catch { message.error('Failed to save'); }
+  };
+
+  const toggleAssistant = async (enabled: boolean) => {
+    try {
+      await assistantApi.toggle(Number(id), enabled);
+      setAiStatus(prev => prev ? { ...prev, enabled } : null);
+      message.success(enabled ? 'AI assistant enabled' : 'AI assistant disabled');
+    } catch {
+      message.error('Failed to update assistant setting');
+    }
+  };
+
+  const triggerIndex = async () => {
+    setIndexing(true);
+    try {
+      await assistantApi.triggerIndex(Number(id));
+      setAiStatus(prev => prev ? { ...prev, index_status: 'indexing' } : null);
+      message.success('Indexing started — this may take a minute');
+    } catch {
+      message.error('Failed to start indexing');
+    }
+    setIndexing(false);
   };
 
   const handleIconUpload = () => {
@@ -197,31 +178,6 @@ export default function ContentManagerEdit() {
   };
 
   const isIconUrl = (icon?: string) => icon && (icon.startsWith('http') || icon.startsWith('/storage') || icon.startsWith('data:'));
-
-  const handleCoverImageUpload = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*,.jpg,.jpeg,.png,.webp';
-    input.onchange = async (ev: any) => {
-      const file = ev.target.files?.[0];
-      if (!file) return;
-      if (file.size > 5 * 1024 * 1024) { message.error('Cover image must be under 5MB'); return; }
-      message.loading({ content: 'Uploading cover image…', key: 'cover-upload', duration: 0 });
-      try {
-        const fd = new FormData();
-        fd.append('file', file);
-        const res = await api.post('/cm/upload', fd);
-        const url = res.data.url;
-        detailsForm.setFieldsValue({ cover_image: url });
-        await api.put(`/cm/modules/${id}`, { cover_image: url });
-        fetchModule();
-        message.success({ content: 'Cover image uploaded!', key: 'cover-upload' });
-      } catch {
-        message.error({ content: 'Cover image upload failed', key: 'cover-upload' });
-      }
-    };
-    input.click();
-  };
 
   const handleVideoUpload = () => {
     const input = document.createElement('input');
@@ -412,15 +368,7 @@ export default function ContentManagerEdit() {
               </Space>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {mod?.slug && (
-              <Button
-                icon={<EyeOutlined />}
-                onClick={() => window.open(`/learning-hub/${mod.slug}`, '_blank')}
-              >
-                Preview as Learner
-              </Button>
-            )}
+          <div>
             <Tooltip title="Module completeness">
               <Progress type="circle" percent={completionScore * 25} size={48} strokeColor={PURPLE}
                 format={() => `${completionScore}/4`} />
@@ -477,22 +425,6 @@ export default function ContentManagerEdit() {
                     <Form.Item name="description" label="Description" extra="Brief summary shown on the Learning Hub cards.">
                       <Input.TextArea rows={3} placeholder="What will learners gain from this module?" showCount maxLength={300} />
                     </Form.Item>
-
-                    <Form.Item name="cover_image" label="Cover Image" extra="Displayed on module cards. Recommended: 800×450px, under 5MB.">
-                      <Input
-                        placeholder="https://... or upload below"
-                        addonAfter={
-                          <Button type="text" icon={<UploadOutlined />} onClick={handleCoverImageUpload} style={{ border: 'none', padding: '0 4px' }}>
-                            Upload
-                          </Button>
-                        }
-                      />
-                    </Form.Item>
-                    {mod?.cover_image && (
-                      <div style={{ marginBottom: 16, textAlign: 'center' }}>
-                        <img src={mod.cover_image} alt="cover" style={{ maxWidth: '100%', maxHeight: 140, borderRadius: 8, border: '1px solid #e9d4ff', objectFit: 'cover' }} />
-                      </div>
-                    )}
 
                     <Divider><PlayCircleOutlined /> Introductory Video</Divider>
                     <Form.Item name="video_url" label="Video" extra="Paste a YouTube, Vimeo, or direct video URL. Or upload a file.">
@@ -603,7 +535,7 @@ export default function ContentManagerEdit() {
                 </Card>
 
                 {/* Dashboard Link */}
-                <Card title={<span><LinkOutlined /> Dashboard Link</span>} style={{ borderRadius: 12 }}>
+                <Card title={<span><LinkOutlined /> Dashboard Link</span>} style={{ borderRadius: 12, marginBottom: 16 }}>
                   <Form form={detailsForm} layout="vertical" onFinish={saveDetails}>
                     <Form.Item name="page_route" label="Linked Page Route">
                       <Input placeholder="/campaign/create" />
@@ -618,84 +550,84 @@ export default function ContentManagerEdit() {
 
                 {/* AI Learning Assistant */}
                 <Card
-                  title={<span><RobotOutlined style={{ color: PURPLE }} /> AI Learning Assistant</span>}
-                  style={{ borderRadius: 12, marginTop: 16 }}
-                  extra={
-                    aiStatus ? (
-                      <Tag color={
-                        aiStatus.index_status === 'ready' ? 'success' :
-                        aiStatus.index_status === 'indexing' ? 'processing' :
-                        aiStatus.index_status === 'failed' ? 'error' : 'default'
-                      }>
-                        {aiStatus.index_status === 'ready' ? 'Ready' :
-                         aiStatus.index_status === 'indexing' ? 'Indexing…' :
-                         aiStatus.index_status === 'failed' ? 'Failed' : 'Not Indexed'}
-                      </Tag>
-                    ) : null
-                  }
+                  title={<span><RobotOutlined style={{ color: PURPLE, marginRight: 6 }} />AI Learning Assistant</span>}
+                  style={{ borderRadius: 12 }}
                 >
-                  {!aiStatus ? (
-                    <div style={{ textAlign: 'center', padding: '16px 0' }}><Spin size="small" /></div>
-                  ) : (
-                    <Space direction="vertical" style={{ width: '100%' }} size={14}>
-                      {/* Enable / Disable toggle */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Text>Enable Assistant</Text>
-                        <Switch
-                          checked={aiStatus.enabled}
-                          loading={aiLoading}
-                          checkedChildren="On"
-                          unCheckedChildren="Off"
-                          onChange={async (checked) => {
-                            setAiLoading(true);
-                            try {
-                              await assistantApi.toggle(Number(id), checked);
-                              setAiStatus(prev => prev ? { ...prev, enabled: checked } : prev);
-                              message.success(checked ? 'Assistant enabled' : 'Assistant disabled');
-                            } catch {
-                              message.error('Failed to update assistant');
-                            }
-                            setAiLoading(false);
-                          }}
-                        />
-                      </div>
+                  {/* Status row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <Text type="secondary" style={{ fontSize: 13 }}>Index Status</Text>
+                    {aiStatus ? (() => {
+                      const cfg: Record<string, { color: string; label: string }> = {
+                        ready:       { color: 'success', label: '✓ Ready' },
+                        indexing:    { color: 'processing', label: '⟳ Indexing…' },
+                        not_indexed: { color: 'warning', label: '○ Not Indexed' },
+                        failed:      { color: 'error',   label: '✕ Failed' },
+                      };
+                      const s = cfg[aiStatus.index_status] ?? cfg['not_indexed'];
+                      return <Tag color={s.color} style={{ borderRadius: 12, margin: 0 }}>{s.label}</Tag>;
+                    })() : <Spin size="small" />}
+                  </div>
 
-                      <Divider style={{ margin: '2px 0' }} />
+                  {/* Enable/Disable toggle */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, padding: '10px 12px', background: '#f9f5ff', borderRadius: 8 }}>
+                    <div>
+                      <Text style={{ fontSize: 13, fontWeight: 500 }}>Enable Assistant</Text>
+                      <div><Text type="secondary" style={{ fontSize: 11 }}>Learners can ask questions about this module</Text></div>
+                    </div>
+                    <Switch
+                      checked={aiStatus?.enabled ?? false}
+                      onChange={toggleAssistant}
+                      disabled={!aiStatus}
+                      checkedChildren="On"
+                      unCheckedChildren="Off"
+                      style={aiStatus?.enabled ? { background: PURPLE } : {}}
+                    />
+                  </div>
 
-                      {/* Index button */}
-                      <Button
-                        icon={<RobotOutlined />}
-                        loading={indexing || aiStatus.index_status === 'indexing'}
-                        disabled={aiStatus.index_status === 'indexing'}
-                        onClick={async () => {
-                          setIndexing(true);
-                          try {
-                            await assistantApi.triggerIndex(Number(id));
-                            setAiStatus(prev => prev ? { ...prev, index_status: 'indexing' } : prev);
-                            message.success('Indexing started — check back in a minute');
-                          } catch {
-                            message.error('Failed to start indexing');
-                          }
-                          setIndexing(false);
-                        }}
-                        style={{ width: '100%' }}
-                      >
-                        {aiStatus.index_status === 'indexing' ? 'Indexing…' : 'Index Content'}
-                      </Button>
+                  {/* Index button */}
+                  <Button
+                    icon={<SyncOutlined spin={indexing || aiStatus?.index_status === 'indexing'} />}
+                    onClick={triggerIndex}
+                    loading={indexing}
+                    disabled={aiStatus?.index_status === 'indexing'}
+                    block
+                    style={{ borderColor: PURPLE, color: PURPLE, borderRadius: 8, marginBottom: 10 }}
+                  >
+                    {aiStatus?.index_status === 'indexing' ? 'Indexing in Progress…' : (aiStatus?.index_status === 'ready' ? 'Re-index Content' : 'Index Content')}
+                  </Button>
 
-                      {/* Last indexed */}
-                      {aiStatus.last_indexed_at && (
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          <ClockCircleOutlined style={{ marginRight: 4 }} />
-                          Last indexed: {new Date(aiStatus.last_indexed_at).toLocaleString()}
-                        </Text>
-                      )}
-                      {!aiStatus.last_indexed_at && aiStatus.index_status === 'not_indexed' && (
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          Content has not been indexed yet. Click "Index Content" to enable the assistant.
-                        </Text>
-                      )}
-                    </Space>
+                  {/* Last indexed timestamp */}
+                  {aiStatus?.last_indexed_at ? (
+                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 8 }}>
+                      <ClockCircleOutlined style={{ marginRight: 4 }} />
+                      Last indexed: {new Date(aiStatus.last_indexed_at).toLocaleString()}
+                    </Text>
+                  ) : aiStatus?.index_status === 'ready' ? null : (
+                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 8 }}>
+                      <ClockCircleOutlined style={{ marginRight: 4 }} />
+                      Never indexed
+                    </Text>
+                  )}
+
+                  {/* Guidance alert when not indexed */}
+                  {aiStatus?.index_status === 'not_indexed' && (
+                    <Alert
+                      message="Not indexed yet"
+                      description="Click 'Index Content' so the AI can answer learner questions about this module."
+                      type="warning"
+                      showIcon
+                      style={{ borderRadius: 8, fontSize: 12 }}
+                    />
+                  )}
+
+                  {aiStatus?.index_status === 'failed' && (
+                    <Alert
+                      message="Indexing failed"
+                      description="Try clicking 'Re-index Content' again. Check that this module has sections with content."
+                      type="error"
+                      showIcon
+                      style={{ borderRadius: 8, fontSize: 12 }}
+                    />
                   )}
                 </Card>
               </Col>
@@ -722,23 +654,23 @@ export default function ContentManagerEdit() {
                   <Row gutter={16}>
                     <Col xs={24}>
                       <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Section Title</Text>
-                      <Input value={sec.title} onChange={e => updateSectionDebounced(sec.id, { title: e.target.value })} placeholder="Section title" style={{ marginBottom: 12 }} />
+                      <Input value={sec.title} onChange={e => updateSection(sec.id, { title: e.target.value })} placeholder="Section title" style={{ marginBottom: 12 }} />
                     </Col>
                     <Col xs={24}>
                       <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Content (supports markdown: **bold**, - bullet points)</Text>
-                      <Input.TextArea value={sec.body} onChange={e => updateSectionDebounced(sec.id, { body: e.target.value })} rows={8} placeholder="Write section content here..." style={{ marginBottom: 12, fontFamily: 'monospace', fontSize: 13 }} />
+                      <Input.TextArea value={sec.body} onChange={e => updateSection(sec.id, { body: e.target.value })} rows={8} placeholder="Write section content here..." style={{ marginBottom: 12, fontFamily: 'monospace', fontSize: 13 }} />
                     </Col>
                     <Col xs={24} md={12}>
                       <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
                         <BookOutlined style={{ color: PURPLE }} /> Key Takeaway
                       </Text>
-                      <Input.TextArea value={sec.key_takeaway || ''} onChange={e => updateSectionDebounced(sec.id, { key_takeaway: e.target.value })} rows={2} placeholder="What's the main learning from this section?" />
+                      <Input.TextArea value={sec.key_takeaway || ''} onChange={e => updateSection(sec.id, { key_takeaway: e.target.value })} rows={2} placeholder="What's the main learning from this section?" />
                     </Col>
                     <Col xs={24} md={12}>
                       <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
                         <PlayCircleOutlined /> Section Video URL
                       </Text>
-                      <Input value={sec.video_url || ''} onChange={e => updateSectionDebounced(sec.id, { video_url: e.target.value })} placeholder="Optional video for this section" suffix={<UploadOutlined style={{ cursor: 'pointer', color: PURPLE }} onClick={() => handleSectionVideoUpload(sec.id)} />} />
+                      <Input value={sec.video_url || ''} onChange={e => updateSection(sec.id, { video_url: e.target.value })} placeholder="Optional video for this section" suffix={<UploadOutlined style={{ cursor: 'pointer', color: PURPLE }} onClick={() => handleSectionVideoUpload(sec.id)} />} />
                       <div style={{ marginTop: 8 }}>
                         <Checkbox checked={!!sec.is_required} onChange={e => updateSection(sec.id, { is_required: e.target.checked })}>
                           Required for completion
@@ -764,7 +696,7 @@ export default function ContentManagerEdit() {
               {mod?.checklists?.map((cl: any, i: number) => (
                 <div key={cl.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, padding: '10px 12px', background: '#fafafa', borderRadius: 8 }}>
                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#e8f5e9', color: '#52c41a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>{i + 1}</div>
-                  <Input value={cl.label} onChange={e => updateChecklistDebounced(cl.id, { label: e.target.value })} bordered={false} style={{ flex: 1, fontSize: 14 }} />
+                  <Input value={cl.label} onChange={e => updateChecklist(cl.id, { label: e.target.value })} bordered={false} style={{ flex: 1, fontSize: 14 }} />
                   <Popconfirm title="Delete?" onConfirm={() => deleteChecklist(cl.id)}><Button danger type="text" icon={<DeleteOutlined />} size="small" /></Popconfirm>
                 </div>
               ))}
@@ -808,7 +740,7 @@ export default function ContentManagerEdit() {
                     extra={<Popconfirm title="Delete this question?" onConfirm={() => deleteQuiz(q.id)}><Button danger icon={<DeleteOutlined />} size="small">Delete</Button></Popconfirm>}
                   >
                     <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>Question</Text>
-                    <Input value={q.question} onChange={e => updateQuizDebounced(q.id, { question: e.target.value })} placeholder="Type your question here" style={{ marginBottom: 16 }} />
+                    <Input value={q.question} onChange={e => updateQuiz(q.id, { question: e.target.value })} placeholder="Type your question here" style={{ marginBottom: 16 }} />
 
                     <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>Answer Options</Text>
                     <Row gutter={[12, 8]}>
@@ -816,7 +748,7 @@ export default function ContentManagerEdit() {
                         <Col xs={24} md={12} key={j}>
                           <Input
                             value={opt}
-                            onChange={e => { const newOpts = [...opts]; newOpts[j] = e.target.value; updateQuizDebounced(q.id, { options: JSON.stringify(newOpts) }); }}
+                            onChange={e => { const newOpts = [...opts]; newOpts[j] = e.target.value; updateQuiz(q.id, { options: JSON.stringify(newOpts) }); }}
                             addonBefore={<span style={{ fontWeight: 600, color: opt === q.correct_answer ? '#52c41a' : undefined }}>{String.fromCharCode(65 + j)}</span>}
                             style={{ borderColor: opt === q.correct_answer ? '#b7eb8f' : undefined }}
                           />
@@ -884,27 +816,11 @@ export default function ContentManagerEdit() {
                   extra={sec.is_required ? <Tag color="purple">Required</Tag> : <Tag color="default">Optional</Tag>}
                 >
                   <div style={{ lineHeight: 1.8 }}>
-                    {sec.body?.split('\n').map((line: string, li: number, arr: string[]) => {
+                    {sec.body?.split('\n').map((line: string, li: number) => {
                       if (line.startsWith('**') && line.endsWith('**')) return <Text key={li} strong style={{ display: 'block', marginTop: 12, fontSize: 15 }}>{line.replace(/\*\*/g, '')}</Text>;
-                      if (line.startsWith('- ')) {
-                        const text = line.slice(2);
-                        const boldMatch = text.match(/^\*\*(.+?)\*\*\s*[—–-]\s*(.+)/);
-                        return (
-                          <div key={li} style={{ position: 'relative', paddingLeft: 20, marginBottom: boldMatch ? 6 : 2 }}>
-                            <span style={{ position: 'absolute', left: 4, top: 8, width: 6, height: 6, borderRadius: '50%', background: 'linear-gradient(135deg, #6B2FA0, #9B59B6)', display: 'inline-block' }} />
-                            {boldMatch ? (
-                              <div>
-                                <strong style={{ display: 'block', color: '#1a1a2e', lineHeight: 1.5 }}>{boldMatch[1]}</strong>
-                                <span style={{ color: '#666', fontSize: '0.88em', lineHeight: 1.5 }}>{boldMatch[2]}</span>
-                              </div>
-                            ) : text}
-                          </div>
-                        );
-                      }
+                      if (line.startsWith('- ')) return <div key={li} style={{ paddingLeft: 16, marginBottom: 2 }}>• {line.slice(2)}</div>;
                       if (line.trim() === '') return <div key={li} style={{ height: 8 }} />;
-                      const prevNonEmpty = arr.slice(0, li).reduceRight<string | null>((acc, l) => (acc === null && l.trim() !== '' ? l : acc), null);
-                      const isAfterBullet = prevNonEmpty !== null && prevNonEmpty.startsWith('- ');
-                      return <span key={li} style={{ display: 'block', paddingLeft: isAfterBullet ? 20 : 0, color: isAfterBullet ? '#666' : undefined, fontSize: isAfterBullet ? '0.9em' : undefined, marginBottom: isAfterBullet ? 8 : 0 }}>{line}<br /></span>;
+                      return <span key={li}>{line}<br /></span>;
                     })}
                   </div>
                   {sec.video_url && <div style={{ marginTop: 16 }}><video controls style={{ width: '100%', borderRadius: 8 }} src={sec.video_url} /></div>}

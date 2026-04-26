@@ -12,10 +12,6 @@ class TrainingModuleSeeder extends Seeder
 {
     public function run(): void
     {
-        if (TrainingModule::count() > 0) {
-            return; // already seeded — idempotent
-        }
-
         $this->seedDashboard();
         $this->seedCampaigns();
         $this->seedCustomers();

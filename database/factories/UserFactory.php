@@ -29,28 +29,16 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'role' => 'CASHIER',
-            'approved' => true,
         ];
     }
 
-    public function admin(): static
-    {
-        return $this->state(['role' => 'ADMIN', 'approved' => true]);
-    }
-
-    public function trainer(): static
-    {
-        return $this->state(['role' => 'TRAINER', 'approved' => true]);
-    }
-
-    public function unapproved(): static
-    {
-        return $this->state(['approved' => false]);
-    }
-
+    /**
+     * Indicate that the model's email address should be unverified.
+     */
     public function unverified(): static
     {
-        return $this->state(['email_verified_at' => null]);
+        return $this->state(fn (array $attributes) => [
+            'email_verified_at' => null,
+        ]);
     }
 }

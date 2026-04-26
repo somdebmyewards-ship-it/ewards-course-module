@@ -17,9 +17,8 @@ class CertificateController extends Controller
         $userId = $request->user()->id;
         $user = $request->user();
 
-        // H5: Auto-issue only when user explicitly views certificates page
-        $this->completion->autoIssueMissing($userId);
-
+        // H5: READ-only — no writes on GET endpoints.
+        // Certificates are issued exclusively via CompletionService::checkAndComplete()
         $certs = Certificate::where('user_id', $userId)->get();
 
         if ($certs->isEmpty()) {
@@ -53,12 +52,8 @@ class CertificateController extends Controller
     // H6: Single download method used by both routes
     public function download(Request $request)
     {
-        return $this->generatePdf(
-            $request->user(),
-            $request->query('id'),
-            $request->query('module_id'),
-            $request->query('type')
-        );
+        $certId = $request->query('id');
+        return $this->generatePdf($request->user(), $certId);
     }
 
     public function downloadById(Request $request, $id)
@@ -66,29 +61,19 @@ class CertificateController extends Controller
         return $this->generatePdf($request->user(), $id);
     }
 
-    private function generatePdf($user, $certId = null, $moduleId = null, $type = null)
+    private function generatePdf($user, $certId = null)
     {
         $userId = $user->id;
 
-        // H5: Auto-issue only on explicit download action
-        $this->completion->autoIssueMissing($userId);
-
+        // H5: READ-only — no writes on download. Certs issued via completion flow only.
         $query = Certificate::where('user_id', $userId);
         if ($certId) {
             $query->where('id', $certId);
-        } elseif ($moduleId) {
-            // Specific module cert requested (e.g. from the just-completed module screen)
-            $query->where('certificate_type', 'module')->where('module_id', $moduleId);
-        } elseif ($type && in_array($type, ['module', 'path', 'expert'], true)) {
-            $query->where('certificate_type', $type);
         }
         $cert = $query->orderByRaw("FIELD(certificate_type,'path','expert','module')")->first();
 
         if (!$cert) {
-            $msg = $moduleId
-                ? 'Certificate for this module has not been issued yet. Try completing the module again or contact support.'
-                : 'No certificate available yet. Finish a module to earn one.';
-            return response()->json(['message' => $msg], 404);
+            return response()->json(['message' => 'No certificate available. Complete all modules first.'], 404);
         }
 
         $data = $this->completion->buildPdfData($cert, $user);

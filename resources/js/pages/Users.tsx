@@ -57,7 +57,7 @@ export default function Users() {
     total: users.length,
     approved: users.filter(u => u.approved).length,
     pending: users.filter(u => !u.approved).length,
-    certified: users.filter(u => u.certified).length,
+    certified: users.filter(u => u.certificate).length,
   };
 
   const roleColors: Record<string, string> = { ADMIN: 'purple', TRAINER: 'blue', CASHIER: 'default', CLIENT: 'green', USER: 'cyan' };
@@ -88,17 +88,12 @@ export default function Users() {
       sorter: (a: any, b: any) => (a.points || 0) - (b.points || 0),
     },
     {
-      title: 'Badges', dataIndex: 'badge_count', key: 'badge_count', width: 80,
-      render: (n: number) => n > 0 ? <Tag icon={<TrophyOutlined />} color="gold">{n}</Tag> : <span style={{ color: '#ccc' }}>—</span>,
-      sorter: (a: any, b: any) => (a.badge_count || 0) - (b.badge_count || 0),
-    },
-    {
       title: 'Progress', key: 'progress', width: 120,
       render: (_: any, r: any) => {
-        const pct = r.progress ?? 0;
+        const pct = r.progress_percentage ?? 0;
         return <Progress percent={pct} size="small" strokeColor="#6B2FA0" />;
       },
-      sorter: (a: any, b: any) => (a.progress || 0) - (b.progress || 0),
+      sorter: (a: any, b: any) => (a.progress_percentage || 0) - (b.progress_percentage || 0),
     },
     { title: 'Status', dataIndex: 'approved', key: 'approved', width: 110, render: (approved: boolean) => approved ? <Tag icon={<CheckCircleOutlined />} color="success">Approved</Tag> : <Tag icon={<ClockCircleOutlined />} color="warning">Pending</Tag> },
     { title: 'Actions', key: 'actions', width: 180, render: (_: any, r: any) => (
@@ -135,7 +130,7 @@ export default function Users() {
           <Form.Item name="name" label="Name" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}><Input /></Form.Item>
           <Form.Item name="password" label="Password" rules={[{ required: true, min: 6 }]}><Input.Password /></Form.Item>
-          <Form.Item name="role" label="Role" initialValue="CASHIER"><Select options={[{ value: 'ADMIN', label: 'Admin' }, { value: 'TRAINER', label: 'Trainer' }, { value: 'CASHIER', label: 'Cashier' }, { value: 'CLIENT', label: 'Client' }]} /></Form.Item>
+          <Form.Item name="role" label="Role" initialValue="CASHIER"><Select options={[{ value: 'ADMIN', label: 'Admin' }, { value: 'TRAINER', label: 'Trainer' }, { value: 'CASHIER', label: 'Cashier' }, { value: 'CLIENT', label: 'Client' }, { value: 'USER', label: 'User' }]} /></Form.Item>
           <Button type="primary" htmlType="submit" block style={{ background: '#6B2FA0' }}>Create User</Button>
         </Form>
       </Modal>
@@ -143,7 +138,7 @@ export default function Users() {
       <Modal title="Edit User" open={editOpen} onCancel={() => setEditOpen(false)} footer={null} width={520}>
         <Form form={editForm} layout="vertical" onFinish={updateUser}>
           <Form.Item name="name" label="Name"><Input /></Form.Item>
-          <Form.Item name="role" label="Role"><Select options={[{ value: 'ADMIN', label: 'Admin' }, { value: 'TRAINER', label: 'Trainer' }, { value: 'CASHIER', label: 'Cashier' }, { value: 'CLIENT', label: 'Client' }]} /></Form.Item>
+          <Form.Item name="role" label="Role"><Select options={[{ value: 'ADMIN', label: 'Admin' }, { value: 'TRAINER', label: 'Trainer' }, { value: 'CASHIER', label: 'Cashier' }, { value: 'CLIENT', label: 'Client' }, { value: 'USER', label: 'User' }]} /></Form.Item>
           <Form.Item name="merchant_id" label="Merchant">
             <Select
               allowClear

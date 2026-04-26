@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Typography, Card, Steps, Button, Checkbox, Radio, Space, Tag, Spin, message, Divider, Image, Alert, Result, Progress as AntProgress, Layout, Menu, Statistic, Rate, Input, Dropdown, Modal } from 'antd';
+import { Typography, Card, Steps, Button, Checkbox, Radio, Space, Tag, Spin, message, Divider, Image, Alert, Result, Progress as AntProgress, Layout, Menu, Statistic, Rate, Input, Dropdown } from 'antd';
 import { CheckCircleOutlined, TrophyOutlined, BookOutlined, StarOutlined, StarFilled, PlayCircleOutlined, FileTextOutlined, PictureOutlined, LeftOutlined, RightOutlined, CopyOutlined, DownloadOutlined, SafetyCertificateOutlined, RiseOutlined, BulbOutlined, UnorderedListOutlined, ShareAltOutlined, LinkedinOutlined, XOutlined, WhatsAppOutlined, RobotOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import VideoPlayer from '@/components/VideoPlayer';
+import PrototypeSimulator from '@/components/PrototypeSimulator';
 import AssistantDrawer from '@/components/AssistantDrawer';
 import { assistantApi, AssistantStatus } from '@/lib/assistantApi';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,7 +29,7 @@ export default function ModuleDetail() {
   const [mod, setMod] = useState<any>(null);
   const [progress, setProgress] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState(0); // 0=Learn, 1=Quiz, 2=Done
+  const [step, setStep] = useState(0); // 0=Learn, 1=Prototype, 2=Quiz, 3=Done
   const [checklistState, setChecklistState] = useState<Record<number, boolean>>({});
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
   const [quizResult, setQuizResult] = useState<any>(null);
@@ -51,33 +52,7 @@ export default function ModuleDetail() {
   const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({});
   const [assistantOpen, setAssistantOpen]         = useState(false);
   const [assistantStatus, setAssistantStatus]     = useState<AssistantStatus | null>(null);
-  const [shareModal, setShareModal]               = useState<{ open: boolean; text: string }>({ open: false, text: '' });
-  const [activeFlowIdx, setActiveFlowIdx] = useState(0);
-  const [activeStepIdx, setActiveStepIdx] = useState(0);
-  const [viewingPractice, setViewingPractice] = useState(false);
-  // Interactive prototype iframe — auto-shape to fit one page.
-  //
-  // Strategy: measure the prototype's natural content size ONCE after load,
-  // then apply CSS `transform: scale()` so the entire prototype shrinks to
-  // fit inside the card container. The learner sees everything at once, no
-  // internal scrolling, no clipping. Because we measure exactly once (in
-  // onLoad, inside rAF) and only mutate the iframe's width/height *once*,
-  // we avoid the feedback loops that broke the previous attempts (100vh /
-  // flex:1 layouts that resize when their host resizes).
-  //
-  // The container has a fixed responsive size (`min(1100px, max(600px,
-  // 85vh))`); the iframe inside is expanded to its natural content size
-  // and scaled down via transform. `overflow: hidden` on the container
-  // clips any residual whitespace while the scale is applied.
-  const prototypeIframeRef = useRef<HTMLIFrameElement | null>(null);
-  const prototypeContainerRef = useRef<HTMLDivElement | null>(null);
-  const prototypeMeasuredRef = useRef(false);
-  const [prototypeNatural, setPrototypeNatural] = useState<{ w: number; h: number } | null>(null);
-  const [prototypeScale, setPrototypeScale] = useState<number>(1);
   const { refreshUser, user } = useAuth();
-  // Guard: prevents the section-view effect from triggering auto-complete on
-  // initial mount/refresh before the data load has seeded viewedSections.
-  const initialLoadDone = useRef(false);
 
   useEffect(() => {
     // Single API call — server bundles bookmarks, feedback, assistant status
@@ -93,15 +68,17 @@ export default function ModuleDetail() {
           // Coming from a bookmark — always show section content regardless of quiz state
           setStep(0);
           setViewingIntro(false);
-        } else if (p.module_completed) {
-          setStep(2);
-          if (p.quiz_completed) setQuizResult({ score: p.quiz_score, passed: true });
+        } else if (p.quiz_completed && p.module_completed) {
+          setStep(3);
+          setQuizResult({ score: p.quiz_score, passed: true });
           localStorage.removeItem(`module_step_${slug}`);
         } else {
           // Restore the step the user was on when they left (stored in localStorage)
           const savedStep = parseInt(localStorage.getItem(`module_step_${slug}`) || '0', 10);
-          if (savedStep === 1 && !p.quiz_completed) {
-            setStep(1); // resume at quiz page
+          if (savedStep === 2 && !p.quiz_completed) {
+            setStep(2); // resume at quiz page
+          } else if (savedStep === 1 && !p.prototype_completed && (m.prototype_url || m.prototype_config)) {
+            setStep(1); // resume at prototype page
           }
           // else step stays 0 — resume content at last_section_id
         }
@@ -145,205 +122,8 @@ export default function ModuleDetail() {
       }
 
       setLoading(false);
-      initialLoadDone.current = true;
     }).catch(() => setLoading(false));
   }, [slug]);
-
-  // Re-fetch module content (sections/checklists/quizzes) when the tab regains
-  // focus — so that if an admin edits a quiz/section in Content Manager in
-  // another tab, switching back to the learner view shows fresh content
-  // without needing a manual refresh. We only replace the static content
-  // fields, leaving UI state (step, currentSectionId, answers, etc.) intact.
-  useEffect(() => {
-    const refresh = () => {
-      if (document.visibilityState !== 'visible') return;
-      if (!initialLoadDone.current) return;
-      api.get(`/modules/${slug}`).then(r => {
-        const m = r.data;
-        setMod((prev: any) => prev ? {
-          ...prev,
-          title: m.title,
-          description: m.description,
-          icon: m.icon,
-          video_url: m.video_url,
-          sections: m.sections,
-          checklists: m.checklists,
-          quizzes: m.quizzes,
-          quiz_metadata: m.quiz_metadata,
-        } : m);
-      }).catch(() => {});
-    };
-    document.addEventListener('visibilitychange', refresh);
-    window.addEventListener('focus', refresh);
-    return () => {
-      document.removeEventListener('visibilitychange', refresh);
-      window.removeEventListener('focus', refresh);
-    };
-  }, [slug]);
-
-  // Prototype iframe auto-shape. The goal is: whatever HTML file the admin
-  // uploads, the learner sees the ENTIRE thing on one screen, no internal
-  // scrolling, no bottom clipping.
-  //
-  // Two problems to solve:
-  //
-  // 1. Prototypes that use `height: 100vh` / `height: 100%` report
-  //    `scrollHeight === viewportHeight`. Their content is actually
-  //    taller but it's hidden inside overflow containers. We inject a
-  //    stylesheet that forces html/body to auto-size so the true content
-  //    height becomes measurable.
-  //
-  // 2. Cross-origin iframes block `contentDocument` access (dev mode
-  //    runs Vite on :5173 and Laravel on :8000, so the prototype URL is
-  //    a different origin and measurement throws). In that case we fall
-  //    back to a sensible design viewport (1280 × 1400) and scale the
-  //    whole iframe to fit the container — content may have letterbox
-  //    bars but nothing is clipped.
-  // Intrinsic size the iframe is rendered at when we can't measure content
-  // (cross-origin). A standard desktop-ish canvas — same-origin prototypes
-  // get measured accurately and this fallback isn't used.
-  const PROTOTYPE_FALLBACK_W = 1280;
-  const PROTOTYPE_FALLBACK_H = 900;
-
-  // Normalize the prototype URL so the iframe is same-origin whenever
-  // possible. In production both the app and the uploaded HTML are served
-  // from the same domain, so this is a no-op. In dev the backend may
-  // return an absolute URL (http://127.0.0.1:8000/storage/…) while the
-  // page is loaded from http://localhost:5173 — stripping the origin and
-  // using just the pathname lets the browser treat the iframe as
-  // same-origin, which is required for our CSS injection + measurement.
-  const normalizedPrototypeUrl = React.useMemo(() => {
-    const raw = mod?.prototype_url;
-    if (!raw) return '';
-    try {
-      const parsed = new URL(raw, window.location.origin);
-      if (parsed.origin === window.location.origin) {
-        return parsed.pathname + parsed.search + parsed.hash;
-      }
-      return raw;
-    } catch {
-      return raw;
-    }
-  }, [mod?.prototype_url]);
-
-  const measurePrototype = React.useCallback(() => {
-    const iframe = prototypeIframeRef.current;
-    if (!iframe) return;
-    if (prototypeMeasuredRef.current) return;
-
-    // Attempt same-origin measurement. If any step throws (cross-origin,
-    // detached document, sandbox restrictions) we fall through to the
-    // fallback design size so the scale-to-fit still happens.
-    let measured: { w: number; h: number } | null = null;
-    try {
-      const doc = iframe.contentDocument;
-      if (doc?.documentElement) {
-        if (!doc.getElementById('ewards-autofit-css')) {
-          const style = doc.createElement('style');
-          style.id = 'ewards-autofit-css';
-          // Only relax html/body — touching descendants (body > *) breaks
-          // prototypes that rely on `overflow: hidden` on the phone frame
-          // to clip the input bar at the rounded-corner edge. Our goal is
-          // just to let the body collapse to natural content height; the
-          // prototype's own layout must be left intact.
-          style.textContent = `
-            html, body {
-              height: auto !important;
-              min-height: 0 !important;
-              max-height: none !important;
-              overflow: visible !important;
-            }
-          `;
-          (doc.head || doc.documentElement).appendChild(style);
-        }
-        const html = doc.documentElement;
-        const body = doc.body;
-        const w = Math.max(
-          html.scrollWidth,
-          body?.scrollWidth || 0,
-          html.offsetWidth,
-          body?.offsetWidth || 0,
-        );
-        const h = Math.max(
-          html.scrollHeight,
-          body?.scrollHeight || 0,
-          html.offsetHeight,
-          body?.offsetHeight || 0,
-        );
-        if (w >= 100 && h >= 100) measured = { w, h };
-      }
-    } catch {
-      // cross-origin — handled by fallback below
-    }
-
-    const natural = measured ?? { w: PROTOTYPE_FALLBACK_W, h: PROTOTYPE_FALLBACK_H };
-
-    prototypeMeasuredRef.current = true;
-    setPrototypeNatural(natural);
-
-    // If the container is already visible, compute the scale now;
-    // otherwise the ResizeObserver handles it when the card un-hides.
-    const container = prototypeContainerRef.current;
-    if (container) {
-      const rect = container.getBoundingClientRect();
-      if (rect.width >= 100) {
-        setPrototypeScale(computeScale(rect.width, natural));
-      }
-    }
-  }, []);
-
-  // Scale chooser: fit BOTH width and height so the card stays within one
-  // viewport (so the "I've completed the practice" button below stays
-  // above the fold). Pure width-fit can make the card taller than the
-  // screen, pushing the action button out of view. We cap the usable
-  // height at ~70vh so there's always room below for the button.
-  // `Math.min(..., 1)` prevents upscaling small prototypes past native.
-  const computeScale = React.useCallback(
-    (containerWidth: number, natural: { w: number; h: number }) => {
-      const maxHeightPx = Math.min(window.innerHeight * 0.7, 820);
-      return Math.min(containerWidth / natural.w, maxHeightPx / natural.h, 1);
-    },
-    [],
-  );
-
-  // Retry measurement when the learner enters practice view. Handles the
-  // case where onLoad fired while the card was still `display: none` (the
-  // iframe is always-mounted). `prototypeMeasuredRef` guards against
-  // double-work once a measurement succeeds.
-  useEffect(() => {
-    if (!viewingPractice) return;
-    if (prototypeMeasuredRef.current) return;
-    const timers = [
-      window.setTimeout(measurePrototype, 0),
-      window.setTimeout(measurePrototype, 120),
-      window.setTimeout(measurePrototype, 500),
-      // Last-ditch fallback even if iframe never fires onLoad.
-      window.setTimeout(measurePrototype, 1500),
-    ];
-    return () => timers.forEach((t) => window.clearTimeout(t));
-  }, [viewingPractice, measurePrototype]);
-
-  // Recompute scale when the container dimensions change (initial reveal,
-  // window resize, sidebar toggle, etc.). Content size is fixed from the
-  // single measurement — we only recompute the transform factor here.
-  useEffect(() => {
-    if (!prototypeNatural) return;
-    const recompute = () => {
-      const container = prototypeContainerRef.current;
-      if (!container) return;
-      const rect = container.getBoundingClientRect();
-      if (rect.width < 100) return;
-      setPrototypeScale(computeScale(rect.width, prototypeNatural));
-    };
-    recompute();
-    window.addEventListener('resize', recompute);
-    const ro = new ResizeObserver(recompute);
-    if (prototypeContainerRef.current) ro.observe(prototypeContainerRef.current);
-    return () => {
-      window.removeEventListener('resize', recompute);
-      ro.disconnect();
-    };
-  }, [prototypeNatural, computeScale]);
 
   const submitFeedback = async () => {
     if (!mod || feedbackRating === 0) { message.warning('Please select a rating'); return; }
@@ -363,9 +143,6 @@ export default function ModuleDetail() {
   // Track section view — also auto-completes corresponding checklist item
   useEffect(() => {
     if (!currentSectionId || !mod || viewingIntro) return;
-    // Skip on initial mount: viewedSections hasn't been seeded yet from the
-    // server response, so any "not yet viewed" check would be a false positive.
-    if (!initialLoadDone.current) return;
 
     api.post('/section-views', { module_id: mod.id, section_id: currentSectionId }).catch(() => {});
     api.post(`/progress/${mod.id}/resume`, { section_id: currentSectionId }).catch(() => {});
@@ -408,62 +185,30 @@ export default function ModuleDetail() {
     }
   }, [currentSectionId, mod?.id, viewingIntro]);
 
-  // No measurement, no observer, no postMessage listener — the iframe
-  // sizes itself via CSS (min(85vh, 1100px)). That's all we need.
-
   const markHelpViewed = async () => {
     try { await api.post(`/progress/${mod.id}/help-viewed`); } catch {}
-  };
-
-  // Fire-and-forget variant used when the user is mid-click (e.g. clicking
-  // "Continue to Quiz"). The network round-trip to the TiDB Cloud DB can hang
-  // for tens of seconds under load — awaiting it freezes the UI and makes the
-  // button appear broken. We let the call race in the background; the backend
-  // also re-computes help_viewed from the progress row when the user submits
-  // the quiz, so losing this call is not catastrophic.
-  const markHelpViewedBackground = () => {
-    api.post(`/progress/${mod.id}/help-viewed`).catch(() => {});
   };
 
   const allChecklistDone = mod?.checklists?.every((c: any) => checklistState[c.id]) ||
     mod?.sections?.every((s: any) => viewedSections.includes(s.id)) || false;
 
   const hasPrototype = !!(mod?.prototype_url || (mod?.prototype_config?.enabled && mod?.prototype_config?.flows?.length > 0));
-  const prototypeGateCleared = !hasPrototype || !!progress?.prototype_completed;
 
-  const markPrototypeDone = async (flowId: string = 'html_prototype') => {
-    try {
-      const res = await api.post(`/progress/${mod.id}/prototype`, { flow_id: flowId, completed: true });
-      setProgress((prev: any) => ({
-        ...prev,
-        prototype_progress: res.data.prototype_progress,
-        prototype_completed: res.data.prototype_completed,
-      }));
-      if (res.data.first_completion && res.data.achievement) {
-        setAchievement(res.data.achievement);
-      }
-      if (res.data.first_completion) {
-        refreshUser();
-        message.success('Practice completed! +30 points');
-      }
-    } catch { message.error('Failed to save progress'); }
+  const proceedFromLearn = async () => {
+    try { await markHelpViewed(); } catch {}
+    if (hasPrototype) {
+      localStorage.setItem(`module_step_${slug}`, '1');
+      setStep(1); // go to prototype
+    } else {
+      localStorage.setItem(`module_step_${slug}`, '2');
+      setStep(2); // skip prototype, go to quiz
+    }
+    window.scrollTo(0, 0);
   };
 
   const proceedToQuiz = () => {
-    // Do NOT await the help-viewed POST — the DB round-trip can hang 10-30s,
-    // making the button feel broken. Fire it in the background.
-    markHelpViewedBackground();
-    const hasQuiz = mod?.quiz_enabled && (mod?.quizzes || []).length > 0;
-    if (!hasQuiz) {
-      // No quiz configured — module completes via help_viewed + other steps.
-      // Jump straight to the certificate screen.
-      setStep(2);
-      window.scrollTo(0, 0);
-      return;
-    }
-    localStorage.setItem(`module_step_${slug}`, '1');
-    setViewingPractice(false);
-    setStep(1);
+    localStorage.setItem(`module_step_${slug}`, '2');
+    setStep(2);
     window.scrollTo(0, 0);
   };
 
@@ -477,7 +222,7 @@ export default function ModuleDetail() {
       }
       if (res.data.passed) {
         localStorage.removeItem(`module_step_${slug}`);
-        setStep(2);
+        setStep(3);
         refreshUser();
       }
     } catch (err: any) {
@@ -531,32 +276,32 @@ export default function ModuleDetail() {
 
   return (
     <div style={{ maxWidth: '100%' }}>
-      {/* Header — Slim bar with integrated section navigation */}
+      {/* Header — Compact bar with integrated section navigation */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '6px 0', marginBottom: 10, borderBottom: '1px solid #e8e8e8',
-        gap: 8,
+        padding: '6px 0', marginBottom: 8, borderBottom: '1px solid #e8e8e8',
+        gap: 10,
       }}>
         {/* Left: Back + title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
           <button
             onClick={() => navigate('/learning-hub')}
             style={{
-              background: '#f5f5f5', border: 'none', borderRadius: 6,
-              padding: '4px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
-              color: '#6B2FA0', fontSize: 12, fontWeight: 500,
+              background: '#f5f5f5', border: 'none', borderRadius: 8,
+              padding: '6px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+              color: '#6B2FA0', fontSize: 13, fontWeight: 500,
               transition: 'background 0.2s', flexShrink: 0,
             }}
             onMouseEnter={e => (e.currentTarget.style.background = '#f3ebfc')}
             onMouseLeave={e => (e.currentTarget.style.background = '#f5f5f5')}
           >
-            <LeftOutlined style={{ fontSize: 9 }} /> Back
+            <LeftOutlined style={{ fontSize: 10 }} /> Back
           </button>
-          <div style={{ width: 1, height: 18, background: '#d9d9d9', flexShrink: 0 }} />
-          {isIconUrl(mod.icon) ? <img src={mod.icon} alt="" style={{ width: 22, height: 22, objectFit: 'cover', borderRadius: 5, flexShrink: 0 }} /> : <span style={{ fontSize: 18, flexShrink: 0 }}>{mod.icon || '📚'}</span>}
-          <div style={{ minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mod.title}</div>
-            <div style={{ fontSize: 11, color: '#8c8c8c' }}>
+          <div style={{ width: 1, height: 24, background: '#d9d9d9', flexShrink: 0 }} />
+          {isIconUrl(mod.icon) ? <img src={mod.icon} alt="" style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} /> : <span style={{ fontSize: 22, flexShrink: 0 }}>{mod.icon || '📚'}</span>}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mod.title}</div>
+            <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 2 }}>
               {mod.sections?.length || 0} sections · {(mod.quizzes?.length || 0)} {(mod.quizzes?.length || 0) === 1 ? 'quiz' : 'quizzes'}{mod.estimated_minutes ? ` · ${mod.estimated_minutes} min` : ''}
             </div>
           </div>
@@ -592,7 +337,7 @@ export default function ModuleDetail() {
               }}>
                 <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                   {mod.sections?.map((_: any, idx: number) => {
-                    const isViewed = (step >= 2) || viewedSections.includes(mod.sections[idx].id);
+                    const isViewed = (step >= 3) || viewedSections.includes(mod.sections[idx].id);
                     return (
                       <div key={idx}
                         onClick={() => setCurrentSectionId(mod.sections[idx].id)}
@@ -638,11 +383,11 @@ export default function ModuleDetail() {
           {step > 0 && (
             <span style={{
               fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 12,
-              color: step === 2 ? '#52c41a' : '#6B2FA0',
-              background: step === 2 ? '#f6ffed' : '#f3ebfc',
-              border: step === 2 ? '1px solid #d9f7be' : '1px solid #e9d4ff',
+              color: step === 3 ? '#52c41a' : '#6B2FA0',
+              background: step === 3 ? '#f6ffed' : '#f3ebfc',
+              border: step === 3 ? '1px solid #d9f7be' : '1px solid #e9d4ff',
             }}>
-              {step === 2 ? '✓ Completed' : '● In Progress'}
+              {step === 3 ? '✓ Completed' : '● In Progress'}
             </span>
           )}
         </div>
@@ -661,7 +406,7 @@ export default function ModuleDetail() {
             overflow: 'auto',
             maxHeight: 'calc(100vh - 130px)',
             position: 'sticky',
-            top: 72,
+            top: 58,
             border: '1px solid #ede8f5',
             boxShadow: '0 4px 24px rgba(107,47,160,0.08), 0 1px 4px rgba(0,0,0,0.04)',
             flexShrink: 0,
@@ -698,10 +443,10 @@ export default function ModuleDetail() {
                   Your Progress
                 </div>
                 <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.1, letterSpacing: -0.5 }}>
-                  {step >= 2 ? '100%' : `${Math.round((viewedSections.length / (mod.sections?.length || 1)) * 100)}%`}
+                  {step >= 3 ? '100%' : `${Math.round((viewedSections.length / (mod.sections?.length || 1)) * 100)}%`}
                 </div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 3 }}>
-                  {step >= 2 ? 'Course complete 🎉' : `${viewedSections.length} of ${mod.sections?.length || 0} lessons read`}
+                  {step >= 3 ? 'Course complete 🎉' : `${viewedSections.length} of ${mod.sections?.length || 0} lessons read`}
                 </div>
               </div>
               {/* Circular progress indicator */}
@@ -709,11 +454,11 @@ export default function ModuleDetail() {
                 <svg width="52" height="52" viewBox="0 0 52 52" style={{ transform: 'rotate(-90deg)' }}>
                   <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="4" />
                   <circle cx="26" cy="26" r="22" fill="none"
-                    stroke={step >= 2 ? '#52c41a' : '#fff'}
+                    stroke={step >= 3 ? '#52c41a' : '#fff'}
                     strokeWidth="4"
                     strokeLinecap="round"
                     strokeDasharray={`${2 * Math.PI * 22}`}
-                    strokeDashoffset={`${2 * Math.PI * 22 * (1 - (step >= 2 ? 1 : viewedSections.length / (mod.sections?.length || 1)))}`}
+                    strokeDashoffset={`${2 * Math.PI * 22 * (1 - (step >= 3 ? 1 : viewedSections.length / (mod.sections?.length || 1)))}`}
                     style={{ transition: 'stroke-dashoffset 0.5s ease' }}
                   />
                 </svg>
@@ -722,7 +467,7 @@ export default function ModuleDetail() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 13, fontWeight: 800, color: '#fff',
                 }}>
-                  {step >= 2 ? '✓' : viewedSections.length}
+                  {step >= 3 ? '✓' : viewedSections.length}
                 </div>
               </div>
             </div>
@@ -731,8 +476,8 @@ export default function ModuleDetail() {
             <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.2)', overflow: 'hidden', position: 'relative' }}>
               <div style={{
                 height: '100%', borderRadius: 3,
-                background: step >= 2 ? '#52c41a' : 'rgba(255,255,255,0.9)',
-                width: step >= 2 ? '100%' : `${Math.round((viewedSections.length / (mod.sections?.length || 1)) * 100)}%`,
+                background: step >= 3 ? '#52c41a' : 'rgba(255,255,255,0.9)',
+                width: step >= 3 ? '100%' : `${Math.round((viewedSections.length / (mod.sections?.length || 1)) * 100)}%`,
                 transition: 'width 0.5s ease',
                 boxShadow: '0 0 8px rgba(255,255,255,0.5)',
               }} />
@@ -748,10 +493,10 @@ export default function ModuleDetail() {
               </div>
               <span style={{
                 fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
-                background: (step >= 2 || allChecklistDone) ? '#f3ebfc' : '#f5f5f5',
-                color: (step >= 2 || allChecklistDone) ? '#6B2FA0' : '#999',
+                background: (step >= 3 || allChecklistDone) ? '#f3ebfc' : '#f5f5f5',
+                color: (step >= 3 || allChecklistDone) ? '#6B2FA0' : '#999',
               }}>
-                {step >= 2 ? mod.sections?.length || 0 : viewedSections.length}/{mod.sections?.length || 0}
+                {step >= 3 ? mod.sections?.length || 0 : viewedSections.length}/{mod.sections?.length || 0}
               </span>
             </div>
 
@@ -770,7 +515,7 @@ export default function ModuleDetail() {
               {mod.video_url && (
                 <div>
                   <div
-                    onClick={() => { setViewingIntro(true); setViewingPractice(false); if (step > 0) setStep(0); }}
+                    onClick={() => { setViewingIntro(true); if (step > 0) setStep(0); }}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 12,
                       padding: '12px 14px', margin: '0 8px', cursor: 'pointer',
@@ -805,15 +550,15 @@ export default function ModuleDetail() {
               )}
 
               {mod.sections?.map((s: any, i: number) => {
-                const moduleComplete = step >= 2;
+                const moduleComplete = step >= 3;
                 const viewed = moduleComplete || viewedSections.includes(s.id);
-                const active = currentSectionId === s.id && step === 0 && !viewingIntro && !viewingPractice;
+                const active = currentSectionId === s.id && step === 0 && !viewingIntro;
                 const isBookmarked = bookmarks.includes(s.id);
                 const isLast = i === (mod.sections?.length || 0) - 1;
                 return (
                   <div key={s.id}>
                     <div
-                      onClick={() => { setCurrentSectionId(s.id); setViewingIntro(false); setViewingPractice(false); if (step > 0) setStep(0); }}
+                      onClick={() => { setCurrentSectionId(s.id); setViewingIntro(false); if (step > 0) setStep(0); }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 12,
                         padding: '12px 14px',
@@ -876,125 +621,117 @@ export default function ModuleDetail() {
             <div style={{ height: 1, background: '#f0f0f0' }} />
           </div>
 
-          {/* ── INTERACTIVE PRACTICE CARD (prototype) ── */}
-          {hasPrototype && (
+          {/* ── PROTOTYPE PRACTICE CARD ── */}
+          {hasPrototype && (() => {
+            const protoCompleted = !!progress?.prototype_completed;
+            const protoClickable = step >= 1 || protoCompleted || allChecklistDone;
+            const protoActive = step === 1;
+            const protoDone = protoCompleted || step >= 2;
+            return (
             <div style={{ padding: '0 8px 6px' }}>
               <div
-                onClick={() => {
-                  setViewingIntro(false);
-                  setViewingPractice(true);
-                  if (step > 0) setStep(0);
-                  setTimeout(() => {
-                    const el = document.getElementById('prototype-practice-card');
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 80);
-                }}
+                onClick={() => { if (protoClickable) { localStorage.setItem(`module_step_${slug}`, '1'); setStep(1); } }}
                 style={{
-                  borderRadius: 12, padding: '14px 14px', cursor: 'pointer',
+                  borderRadius: 12, padding: '14px 14px',
+                  cursor: protoClickable ? 'pointer' : 'default',
                   transition: 'all 0.25s ease',
-                  background: viewingPractice
-                    ? 'linear-gradient(135deg, #fff1d6 0%, #ffe7ba 100%)'
-                    : progress?.prototype_completed
-                      ? 'linear-gradient(135deg, #f9f5ff 0%, #f3ebfc 50%, #f9f5ff 100%)'
-                      : 'linear-gradient(135deg, #fff7e6 0%, #fff1d6 100%)',
-                  border: viewingPractice
-                    ? '2px solid #fa8c16'
-                    : progress?.prototype_completed ? '1.5px solid #d3adf7' : '1.5px solid #ffd591',
-                  boxShadow: progress?.prototype_completed
-                    ? '0 2px 8px rgba(107,47,160,0.1)'
-                    : '0 2px 8px rgba(250,173,20,0.15)',
+                  background: protoActive
+                    ? 'linear-gradient(135deg, #6B2FA0, #9B59B6)'
+                    : protoDone
+                      ? '#f9f5ff'
+                      : '#fafafa',
+                  border: protoActive ? 'none' : protoDone ? '1px solid #d3adf7' : '1px solid #f0f0f0',
+                  opacity: protoClickable ? 1 : 0.5,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{
-                    width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-                    background: progress?.prototype_completed
-                      ? 'linear-gradient(135deg, #6B2FA0, #9B59B6)'
-                      : 'linear-gradient(135deg, #fa8c16, #faad14)',
-                    color: '#fff',
-                    boxShadow: progress?.prototype_completed
-                      ? '0 2px 8px rgba(107,47,160,0.3)'
-                      : '0 2px 8px rgba(250,140,22,0.3)',
+                    width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+                    background: protoActive ? 'rgba(255,255,255,0.2)' : protoDone ? '#6B2FA0' : '#e8e8e8',
+                    color: protoActive || protoDone ? '#fff' : '#bbb',
                   }}>
-                    {progress?.prototype_completed ? '✓' : '🎮'}
+                    {protoCompleted ? '✓' : '🎮'}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: progress?.prototype_completed ? '#6B2FA0' : '#d46b08' }}>
-                      Interactive Practice
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: protoActive ? '#fff' : protoDone ? '#6B2FA0' : '#333' }}>
+                      Hands-on Practice
                     </div>
-                    <div style={{ fontSize: 11, color: progress?.prototype_completed ? '#9B59B6' : '#ad6800', marginTop: 1 }}>
-                      {progress?.prototype_completed
-                        ? 'Completed ✓'
-                        : mod.prototype_url
-                          ? 'Hands-on practice · Start'
-                          : `${mod.prototype_config?.flows?.length || 0} practice flows · Start`}
+                    <div style={{ fontSize: 11, color: protoActive ? 'rgba(255,255,255,0.7)' : protoDone ? '#9B59B6' : '#aaa', marginTop: 1 }}>
+                      {protoCompleted ? 'Completed ✓' : protoClickable ? (mod.prototype_url ? 'Interactive practice' : `${mod.prototype_config?.flows?.length || 0} flows · +${mod.prototype_config?.points_reward || 30} pts`) : 'Complete lessons first'}
                     </div>
                   </div>
-                  <span style={{ fontSize: 11, color: progress?.prototype_completed ? '#6B2FA0' : '#d46b08', fontWeight: 600 }}>→</span>
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* ── QUIZ CARD ── */}
-          <div style={{ padding: '0 8px 6px' }}>
-            <div
-              onClick={() => { if (allChecklistDone) proceedToQuiz(); }}
-              style={{
-                borderRadius: 12, padding: '14px 14px',
-                cursor: allChecklistDone ? 'pointer' : 'default',
-                transition: 'all 0.25s ease',
-                background: step === 1
-                  ? 'linear-gradient(135deg, #6B2FA0, #9B59B6)'
-                  : step >= 2
-                    ? '#f9f5ff'
-                    : '#fafafa',
-                border: step === 1 ? 'none' : step >= 2 ? '1px solid #d3adf7' : '1px solid #f0f0f0',
-                opacity: allChecklistDone || step >= 1 ? 1 : 0.5,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
-                  background: step === 1 ? 'rgba(255,255,255,0.2)' : step >= 2 ? '#6B2FA0' : '#e8e8e8',
-                  color: step >= 1 ? '#fff' : '#bbb',
-                }}>
-                  {step >= 2 ? '✓' : '📝'}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: step === 1 ? '#fff' : step >= 2 ? '#6B2FA0' : '#333' }}>
-                    Knowledge Check
+          {(() => {
+            const quizClickable = step >= 2 || (!!progress?.prototype_completed && allChecklistDone) || !!progress?.quiz_completed;
+            const quizActive = step === 2;
+            const quizDone = step >= 3 || !!progress?.quiz_completed;
+            return (
+            <div style={{ padding: '0 8px 6px' }}>
+              <div
+                onClick={() => { if (quizClickable) { localStorage.setItem(`module_step_${slug}`, '2'); setStep(2); } }}
+                style={{
+                  borderRadius: 12, padding: '14px 14px',
+                  cursor: quizClickable ? 'pointer' : 'default',
+                  transition: 'all 0.25s ease',
+                  background: quizActive
+                    ? 'linear-gradient(135deg, #6B2FA0, #9B59B6)'
+                    : quizDone
+                      ? '#f9f5ff'
+                      : '#fafafa',
+                  border: quizActive ? 'none' : quizDone ? '1px solid #d3adf7' : '1px solid #f0f0f0',
+                  opacity: quizClickable ? 1 : 0.5,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+                    background: quizActive ? 'rgba(255,255,255,0.2)' : quizDone ? '#6B2FA0' : '#e8e8e8',
+                    color: quizActive || quizDone ? '#fff' : '#bbb',
+                  }}>
+                    {quizDone ? '✓' : '📝'}
                   </div>
-                  <div style={{ fontSize: 11, color: step === 1 ? 'rgba(255,255,255,0.7)' : step >= 2 ? '#9B59B6' : '#aaa', marginTop: 1 }}>
-                    {step >= 2 ? 'Passed ✓' : allChecklistDone ? `${mod.quizzes?.length || 0} questions · Start` : 'Read all lessons first'}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: quizActive ? '#fff' : quizDone ? '#6B2FA0' : '#333' }}>
+                      Knowledge Check
+                    </div>
+                    <div style={{ fontSize: 11, color: quizActive ? 'rgba(255,255,255,0.7)' : quizDone ? '#9B59B6' : '#aaa', marginTop: 1 }}>
+                      {quizDone ? 'Passed ✓' : quizClickable ? `${mod.quizzes?.length || 0} questions · Start` : 'Complete practice first'}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+            );
+          })()}
 
           {/* ── CERTIFICATE CARD ── */}
           <div style={{ padding: '0 8px 14px' }}>
             <div
-              onClick={() => { if (step >= 2) setStep(2); }}
+              onClick={() => { if (step >= 3) setStep(3); }}
               style={{
                 borderRadius: 12, padding: '14px 14px',
-                cursor: step >= 2 ? 'pointer' : 'default',
+                cursor: step >= 3 ? 'pointer' : 'default',
                 transition: 'all 0.3s ease',
-                background: step >= 2
+                background: step >= 3
                   ? 'linear-gradient(135deg, #f9f5ff 0%, #f3ebfc 50%, #f9f5ff 100%)'
                   : '#fafafa',
-                border: step >= 2 ? '1.5px solid #d3adf7' : '1px solid #f0f0f0',
-                opacity: step >= 2 ? 1 : 0.4,
-                boxShadow: step >= 2 ? '0 2px 12px rgba(107,47,160,0.15)' : 'none',
+                border: step >= 3 ? '1.5px solid #d3adf7' : '1px solid #f0f0f0',
+                opacity: step >= 3 ? 1 : 0.4,
+                boxShadow: step >= 3 ? '0 2px 12px rgba(107,47,160,0.15)' : 'none',
                 position: 'relative',
                 overflow: 'hidden',
               }}
             >
               {/* Shimmer effect when earned */}
-              {step >= 2 && (
+              {step >= 3 && (
                 <div style={{
                   position: 'absolute', top: 0, left: '-100%', width: '200%', height: '100%',
                   background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
@@ -1006,23 +743,23 @@ export default function ModuleDetail() {
                 <div style={{
                   width: 34, height: 34, borderRadius: 10, flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-                  background: step >= 2
+                  background: step >= 3
                     ? 'linear-gradient(135deg, #6B2FA0, #9B59B6)'
                     : '#e8e8e8',
-                  color: step >= 2 ? '#fff' : '#bbb',
-                  boxShadow: step >= 2 ? '0 2px 8px rgba(107,47,160,0.35)' : 'none',
+                  color: step >= 3 ? '#fff' : '#bbb',
+                  boxShadow: step >= 3 ? '0 2px 8px rgba(107,47,160,0.35)' : 'none',
                 }}>
-                  {step >= 2 ? '🏅' : '🔒'}
+                  {step >= 3 ? '🏅' : '🔒'}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: step >= 2 ? '#6B2FA0' : '#999' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: step >= 3 ? '#6B2FA0' : '#999' }}>
                     Certificate
                   </div>
-                  <div style={{ fontSize: 11, color: step >= 2 ? '#9B59B6' : '#ccc', marginTop: 1 }}>
-                    {step >= 2 ? 'Tap to view 🎉' : 'Pass quiz to unlock'}
+                  <div style={{ fontSize: 11, color: step >= 3 ? '#9B59B6' : '#ccc', marginTop: 1 }}>
+                    {step >= 3 ? 'Tap to view 🎉' : 'Pass quiz to unlock'}
                   </div>
                 </div>
-                {step >= 2 && (
+                {step >= 3 && (
                   <span style={{ fontSize: 11, color: '#6B2FA0', fontWeight: 600 }}>View →</span>
                 )}
               </div>
@@ -1041,273 +778,8 @@ export default function ModuleDetail() {
         {/* ── RIGHT CONTENT AREA ── */}
         <Content style={{ background: 'transparent', minWidth: 0 }}>
 
-          {/* ─── Interactive Prototype card ─────────────────────────────────
-              The iframe mounts ONCE the moment the module data arrives and
-              stays in the DOM for the whole session. We toggle the card's
-              `display` property instead of conditionally rendering it — per
-              the HTML spec, an iframe with `display: none` keeps its
-              browsing context alive (scripts run, network requests
-              complete, render state persists). When the learner clicks
-              "Interactive Practice", we flip display to block and the
-              iframe appears instantly, already fully loaded. No remount,
-              no re-parse, no re-fetch. */}
-          {hasPrototype && (
-            <div id="prototype-practice-card" style={{
-              background: '#fff', borderRadius: 14,
-              border: `1px solid ${progress?.prototype_completed ? '#d3adf7' : '#e9d4ff'}`,
-              marginBottom: 20, overflow: 'hidden',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              display: (!viewingIntro && viewingPractice && step === 0) ? 'block' : 'none',
-            }}>
-              <div style={{ background: 'linear-gradient(90deg, #6B2FA0 0%, #9B59B6 50%, #c084fc 100%)', height: 4 }} />
-              <div style={{ padding: '14px 20px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 20 }}>🎮</span>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1a0933' }}>Interactive Practice</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>Try the simulator to reinforce what you learned</div>
-                  </div>
-                </div>
-                {progress?.prototype_completed && (
-                  <Tag color="green" style={{ fontSize: 12, padding: '4px 12px', borderRadius: 12 }}>
-                    <CheckCircleOutlined /> Completed
-                  </Tag>
-                )}
-              </div>
-              {mod.prototype_url ? (
-                // Always-mounted auto-shaped iframe.
-                //   - Mounts once per session and stays in the DOM (the
-                //     card toggles `display: none` when not viewing
-                //     practice), so clicking in feels instant.
-                //   - After load we measure the prototype's natural
-                //     content size and apply `transform: scale()` so the
-                //     whole thing fits the card — no internal scroll, no
-                //     clipping, everything visible on one page.
-                <div
-                  ref={prototypeContainerRef}
-                  style={{
-                    width: '100%',
-                    height: prototypeNatural
-                      ? `${Math.ceil(prototypeNatural.h * prototypeScale)}px`
-                      : 'min(820px, 70vh)',
-                    overflow: 'hidden',
-                    position: 'relative',
-                    background: '#f0ebe5',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'flex-start',
-                  }}
-                >
-                  {/* Scale-wrapper: its box is the *scaled* size, which is
-                      what flex uses for centering. Without this, flex
-                      would center the iframe's layout box (its natural,
-                      un-scaled size) and the visible scaled pixels would
-                      cling to the top-left corner of that box — the
-                      exact left-aligned + right-gap bug you just saw. */}
-                  <div
-                    style={{
-                      width: prototypeNatural
-                        ? `${Math.ceil(prototypeNatural.w * prototypeScale)}px`
-                        : '100%',
-                      height: prototypeNatural
-                        ? `${Math.ceil(prototypeNatural.h * prototypeScale)}px`
-                        : '100%',
-                      flex: '0 0 auto',
-                      overflow: 'hidden',
-                      position: 'relative',
-                    }}
-                  >
-                    <iframe
-                      ref={prototypeIframeRef}
-                      src={normalizedPrototypeUrl}
-                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                      loading="eager"
-                      scrolling="no"
-                      onLoad={measurePrototype}
-                      style={{
-                        width: prototypeNatural ? `${prototypeNatural.w}px` : '100%',
-                        height: prototypeNatural ? `${prototypeNatural.h}px` : '100%',
-                        border: 'none',
-                        display: 'block',
-                        transformOrigin: 'top left',
-                        transform: prototypeNatural && prototypeScale < 1
-                          ? `scale(${prototypeScale})`
-                          : 'none',
-                        background: '#f0ebe5',
-                      }}
-                      title="Interactive Prototype Practice"
-                    />
-                  </div>
-                </div>
-              ) : (() => {
-                const flows = Array.isArray(mod.prototype_config?.flows) ? mod.prototype_config.flows : [];
-                if (flows.length === 0) {
-                  return <div style={{ padding: 20, fontSize: 13, color: '#888' }}>No practice flows configured.</div>;
-                }
-                const safeFlowIdx = Math.min(activeFlowIdx, flows.length - 1);
-                const activeFlow = flows[safeFlowIdx];
-                const steps = Array.isArray(activeFlow?.steps) ? activeFlow.steps : [];
-                const safeStepIdx = Math.min(activeStepIdx, Math.max(steps.length - 1, 0));
-                const activeStep = steps[safeStepIdx];
-                const flowDone = !!progress?.prototype_progress?.[activeFlow.id];
-                const isLastStep = safeStepIdx === steps.length - 1;
-
-                const stepTypeStyles: Record<string, { bg: string; border: string; icon: string; label: string; color: string }> = {
-                  instruction: { bg: '#e6f4ff', border: '#91caff', icon: '📘', label: 'Instruction', color: '#0958d9' },
-                  action:      { bg: '#fff7e6', border: '#ffd591', icon: '🎯', label: 'Your Turn',   color: '#d46b08' },
-                  success:     { bg: '#f6ffed', border: '#b7eb8f', icon: '✅', label: 'Well Done',   color: '#389e0d' },
-                };
-                const s = stepTypeStyles[activeStep?.type] || stepTypeStyles.instruction;
-
-                const goNext = () => {
-                  if (!isLastStep) {
-                    setActiveStepIdx(safeStepIdx + 1);
-                  } else {
-                    // Mark flow complete, auto-advance to next unfinished flow
-                    if (!flowDone) markPrototypeDone(activeFlow.id);
-                    const nextUndone = flows.findIndex((f: any, i: number) => i > safeFlowIdx && !progress?.prototype_progress?.[f.id]);
-                    if (nextUndone >= 0) {
-                      setActiveFlowIdx(nextUndone);
-                      setActiveStepIdx(0);
-                    }
-                  }
-                };
-                const goPrev = () => {
-                  if (safeStepIdx > 0) setActiveStepIdx(safeStepIdx - 1);
-                  else if (safeFlowIdx > 0) {
-                    setActiveFlowIdx(safeFlowIdx - 1);
-                    const prevSteps = flows[safeFlowIdx - 1]?.steps || [];
-                    setActiveStepIdx(Math.max(prevSteps.length - 1, 0));
-                  }
-                };
-
-                return (
-                  <div style={{ padding: '18px 20px 20px' }}>
-                    {mod.prototype_config?.description && (
-                      <div style={{ fontSize: 13, color: '#666', marginBottom: 14 }}>
-                        {mod.prototype_config.description}
-                      </div>
-                    )}
-
-                    {/* Flow tabs */}
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-                      {flows.map((f: any, i: number) => {
-                        const done = !!progress?.prototype_progress?.[f.id];
-                        const active = i === safeFlowIdx;
-                        return (
-                          <button
-                            key={f.id}
-                            onClick={() => { setActiveFlowIdx(i); setActiveStepIdx(0); }}
-                            style={{
-                              border: active ? '1.5px solid #6B2FA0' : done ? '1.5px solid #b7eb8f' : '1.5px solid #e8e8e8',
-                              background: active ? '#f3ebfc' : done ? '#f6ffed' : '#fff',
-                              color: active ? '#6B2FA0' : done ? '#389e0d' : '#666',
-                              padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                              cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 6,
-                            }}
-                          >
-                            <span style={{
-                              width: 18, height: 18, borderRadius: '50%', display: 'inline-flex',
-                              alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700,
-                              background: done ? '#52c41a' : active ? '#6B2FA0' : '#e8e8e8',
-                              color: done || active ? '#fff' : '#999',
-                            }}>{done ? '✓' : i + 1}</span>
-                            {f.title}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Flow header */}
-                    <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a0933' }}>
-                        Flow {safeFlowIdx + 1}: {activeFlow.title}
-                      </div>
-                      <div style={{ fontSize: 12, color: '#888' }}>
-                        Step {safeStepIdx + 1} of {steps.length}
-                      </div>
-                    </div>
-
-                    {/* Progress bar */}
-                    <div style={{ height: 4, background: '#f0f0f0', borderRadius: 2, overflow: 'hidden', marginBottom: 16 }}>
-                      <div style={{
-                        height: '100%', width: `${((safeStepIdx + 1) / Math.max(steps.length, 1)) * 100}%`,
-                        background: 'linear-gradient(90deg, #6B2FA0, #9B59B6)', transition: 'width 0.3s',
-                      }} />
-                    </div>
-
-                    {/* Step card */}
-                    {activeStep && (
-                      <div style={{
-                        background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 12,
-                        padding: '16px 18px', marginBottom: 14,
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                          <span style={{ fontSize: 18 }}>{s.icon}</span>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: s.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                            {s.label}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: 14, color: '#1a0933', lineHeight: 1.6 }}>
-                          {activeStep.content}
-                        </div>
-                        {activeStep.hint && (
-                          <div style={{
-                            marginTop: 12, padding: '8px 12px', background: 'rgba(255,255,255,0.6)',
-                            borderRadius: 8, fontSize: 12, color: '#666', display: 'flex', gap: 6,
-                          }}>
-                            <span>💡</span>
-                            <span><strong style={{ color: s.color }}>Hint:</strong> {activeStep.hint}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Prev / Next */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                      <Button
-                        onClick={goPrev}
-                        disabled={safeFlowIdx === 0 && safeStepIdx === 0}
-                        style={{ borderRadius: 8 }}
-                      >
-                        ← Previous
-                      </Button>
-                      <Button
-                        type="primary"
-                        onClick={goNext}
-                        style={{ background: '#6B2FA0', borderColor: '#6B2FA0', borderRadius: 8, fontWeight: 600 }}
-                      >
-                        {isLastStep
-                          ? (flowDone
-                              ? (safeFlowIdx < flows.length - 1 ? 'Next Flow →' : 'All flows done ✓')
-                              : 'Complete Flow ✓')
-                          : 'Next Step →'}
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })()}
-              <div style={{ padding: '12px 20px', borderTop: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafafa' }}>
-                {!progress?.prototype_completed ? (
-                  <Button
-                    type="primary"
-                    size="large"
-                    icon={<CheckCircleOutlined />}
-                    style={{ background: '#6B2FA0', borderColor: '#6B2FA0', borderRadius: 8, fontWeight: 600 }}
-                    onClick={() => markPrototypeDone('html_prototype')}
-                  >
-                    I've completed the practice
-                  </Button>
-                ) : (
-                  <Text type="success" style={{ fontSize: 13, fontWeight: 600 }}>✓ Practice complete</Text>
-                )}
-                <Text type="secondary" style={{ fontSize: 12 }}>+{mod.prototype_config?.points_reward || 30} points</Text>
-              </div>
-            </div>
-          )}
-
-          {/* LEARN: Section content + checklist (step === 0) — hidden while viewing Interactive Practice */}
-          {step === 0 && !viewingPractice && (<>
+          {/* LEARN: Section content + checklist (step === 0) */}
+          {step === 0 && (<>
               {/* Introductory Video view */}
               {viewingIntro && mod.video_url && (
                 <div style={{ marginBottom: 18, background: '#fff', borderRadius: 16, border: '1px solid #f0f0f0', overflow: 'hidden' }}>
@@ -1316,7 +788,7 @@ export default function ModuleDetail() {
                     <PlayCircleOutlined style={{ color: '#6B2FA0', fontSize: 18 }} />
                     <span style={{ fontSize: 16, fontWeight: 700, color: '#1a0933' }}>Introductory Video</span>
                   </div>
-                  <div style={{ position: 'relative', background: '#000', overflow: 'hidden', borderRadius: 0 }}>
+                  <div style={{ position: 'relative', background: '#000', borderRadius: 0 }}>
                     <VideoPlayer url={mod.video_url} />
                   </div>
                   {/* Images + Documents if any */}
@@ -1416,7 +888,7 @@ export default function ModuleDetail() {
                   <div style={{ padding: '22px 32px 28px' }}>
                     {/* 1. Section Video (always first) */}
                     {currentSection.video_url && (
-                      <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', background: '#000' }}>
+                      <div style={{ marginBottom: 20, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', background: '#000' }}>
                         <VideoPlayer url={currentSection.video_url} />
                       </div>
                     )}
@@ -1470,7 +942,7 @@ export default function ModuleDetail() {
                       const previewLines = isLong ? lines.slice(0, splitIdx) : lines;
                       const restLines = isLong ? lines.slice(splitIdx) : [];
 
-                      const renderLine = (line: string, i: number, arr: string[]) => {
+                      const renderLine = (line: string, i: number) => {
                         if (line.startsWith('**') && line.endsWith('**')) {
                           return (
                             <div key={i} style={{
@@ -1486,19 +958,16 @@ export default function ModuleDetail() {
                           const boldMatch = text.match(/^\*\*(.+?)\*\*\s*[—–-]\s*(.+)/);
                           return (
                             <div key={i} style={{
-                              position: 'relative', marginBottom: 4,
-                              padding: '3px 4px 3px 24px',
+                              paddingLeft: 24, position: 'relative', marginBottom: 6,
+                              padding: '4px 4px 4px 24px',
                             }}>
                               <span style={{
-                                position: 'absolute', left: 6, top: 10,
+                                position: 'absolute', left: 6, top: 6,
                                 width: 6, height: 6, borderRadius: '50%',
                                 background: 'linear-gradient(135deg, #6B2FA0, #9B59B6)',
                               }} />
                               {boldMatch ? (
-                                <div>
-                                  <strong style={{ color: '#1a1a2e', display: 'block', lineHeight: 1.5 }}>{boldMatch[1]}</strong>
-                                  <span style={{ color: '#666', fontSize: '0.88em', lineHeight: 1.5 }}>{boldMatch[2]}</span>
-                                </div>
+                                <span><strong style={{ color: '#1a1a2e' }}>{boldMatch[1]}</strong> — {boldMatch[2]}</span>
                               ) : (
                                 <span>{text}</span>
                               )}
@@ -1506,23 +975,7 @@ export default function ModuleDetail() {
                           );
                         }
                         if (line.trim() === '') return <div key={i} style={{ height: 14 }} />;
-                        // Plain paragraph — if the previous non-empty line was a bullet, indent it
-                        // as a continuation description so it aligns with the bullet text above.
-                        const prevNonEmpty = arr.slice(0, i).reduceRight<string | null>(
-                          (acc, l) => (acc === null && l.trim() !== '' ? l : acc), null,
-                        );
-                        const isAfterBullet = prevNonEmpty !== null && prevNonEmpty.startsWith('- ');
-                        return (
-                          <div key={i} style={{
-                            marginBottom: isAfterBullet ? 10 : 4,
-                            paddingLeft: isAfterBullet ? 24 : 0,
-                            color: isAfterBullet ? '#666' : undefined,
-                            fontSize: isAfterBullet ? '0.9em' : undefined,
-                            lineHeight: 1.7,
-                          }}>
-                            {line}
-                          </div>
-                        );
+                        return <div key={i} style={{ marginBottom: 4 }}>{line}</div>;
                       };
 
                       return (
@@ -1543,7 +996,7 @@ export default function ModuleDetail() {
                               <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, #d3adf7, transparent)' }} />
                               <button
                                 id="continue-reading-btn"
-                                onClick={() => { setExpandedSections(prev => ({ ...prev, [currentSection.id]: true })); setTimeout(() => { const el = document.getElementById('expanded-content-start'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 150); }}
+                                onClick={() => { setExpandedSections(prev => ({ ...prev, [currentSection.id]: true })); setTimeout(() => { const el = document.getElementById('expanded-content-start'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); }}
                                 style={{
                                   background: 'linear-gradient(135deg, #6B2FA0 0%, #8B45C0 100%)',
                                   border: 'none',
@@ -1569,7 +1022,7 @@ export default function ModuleDetail() {
                               <div id="expanded-content-start" style={{
                                 animation: 'fadeSlideIn 0.4s ease',
                               }}>
-                                {restLines.map((line: string, i: number) => renderLine(line, i + splitIdx, lines))}
+                                {restLines.map((line: string, i: number) => renderLine(line, i + splitIdx))}
                               </div>
 
                               <div style={{
@@ -1669,29 +1122,121 @@ export default function ModuleDetail() {
               )}
 
 
-              {/* Prototype card is now rendered at top of Content area (always visible on all steps) */}
-
               {!viewingIntro && <button
-                disabled={!allChecklistDone || !prototypeGateCleared}
-                onClick={proceedToQuiz}
+                disabled={!allChecklistDone}
+                onClick={proceedFromLearn}
                 style={{
                   width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
-                  fontSize: 15, fontWeight: 700, cursor: (allChecklistDone && prototypeGateCleared) ? 'pointer' : 'not-allowed',
-                  background: (allChecklistDone && prototypeGateCleared) ? '#6B2FA0' : '#e8e8e8',
-                  color: (allChecklistDone && prototypeGateCleared) ? '#fff' : '#bfbfbf',
+                  fontSize: 15, fontWeight: 700, cursor: allChecklistDone ? 'pointer' : 'not-allowed',
+                  background: allChecklistDone ? '#6B2FA0' : '#e8e8e8',
+                  color: allChecklistDone ? '#fff' : '#bfbfbf',
                   transition: 'all 0.2s', letterSpacing: 0.3,
                 }}
               >
-                {hasPrototype && !progress?.prototype_completed
-                  ? 'Finish Practice to Unlock Quiz'
-                  : (mod?.quiz_enabled && (mod?.quizzes || []).length > 0)
-                    ? 'Continue to Quiz →'
-                    : 'Complete Module →'}
+                {hasPrototype ? 'Continue to Practice →' : 'Continue to Quiz →'}
               </button>}
             </>)}
 
+          {/* PROTOTYPE STEP — iframe for HTML upload, fallback to JSON simulator */}
+          {step === 1 && hasPrototype && (
+            mod.prototype_url ? (
+              /* HTML-upload prototype: embedded iframe — flex column to fit viewport */
+              <div style={{
+                background: '#fff', borderRadius: 16, border: '1px solid #f0f0f0', overflow: 'hidden',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                display: 'flex', flexDirection: 'column',
+                height: 'calc(100vh - 100px)', maxHeight: 'calc(100vh - 100px)',
+              }}>
+                <div style={{ background: 'linear-gradient(90deg, #6B2FA0 0%, #9B59B6 50%, #c084fc 100%)', height: 4, flexShrink: 0 }} />
+                <div style={{ padding: '10px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 18 }}>🎮</span>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a0933' }}>Interactive Practice</div>
+                      <div style={{ fontSize: 12, color: '#888' }}>Complete the activity below, then mark as done</div>
+                    </div>
+                  </div>
+                  {progress?.prototype_completed && (
+                    <Tag color="green" style={{ fontSize: 12, padding: '4px 12px', borderRadius: 12 }}>
+                      <CheckCircleOutlined /> Completed
+                    </Tag>
+                  )}
+                </div>
+                <iframe
+                  src={mod.prototype_url}
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                  style={{ width: '100%', flex: 1, border: 'none', display: 'block', minHeight: 0 }}
+                  title="Interactive Prototype Practice"
+                />
+                <div style={{ padding: '10px 20px', borderTop: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafafa', flexShrink: 0 }}>
+                  {!progress?.prototype_completed ? (
+                    <Button
+                      type="primary"
+                      size="large"
+                      icon={<CheckCircleOutlined />}
+                      style={{ background: '#6B2FA0', borderColor: '#6B2FA0', borderRadius: 8, fontWeight: 600, height: 38, paddingInline: 20 }}
+                      onClick={async () => {
+                        try {
+                          const res = await api.post(`/progress/${mod.id}/prototype`, { flow_id: 'html_prototype', completed: true });
+                          setProgress((prev: any) => ({
+                            ...prev,
+                            prototype_progress: res.data.prototype_progress,
+                            prototype_completed: res.data.prototype_completed,
+                          }));
+                          if (res.data.first_completion && res.data.achievement) {
+                            setAchievement(res.data.achievement);
+                          }
+                          if (res.data.first_completion) {
+                            refreshUser();
+                            message.success('Practice completed! +30 points');
+                          }
+                        } catch { message.error('Failed to save progress'); }
+                      }}
+                    >
+                      I've completed the practice
+                    </Button>
+                  ) : (
+                    <Button
+                      type="primary"
+                      size="large"
+                      style={{ background: '#6B2FA0', borderColor: '#6B2FA0', borderRadius: 8, fontWeight: 600, height: 38, paddingInline: 20 }}
+                      onClick={proceedToQuiz}
+                    >
+                      Continue to Quiz →
+                    </Button>
+                  )}
+                  <Text type="secondary" style={{ fontSize: 12 }}>+30 points for completing</Text>
+                </div>
+              </div>
+            ) : (
+              /* Legacy JSON config: PrototypeSimulator */
+              <PrototypeSimulator
+                config={mod.prototype_config}
+                completedFlows={progress?.prototype_progress ?? {}}
+                onFlowComplete={async (flowId: string) => {
+                  try {
+                    const res = await api.post(`/progress/${mod.id}/prototype`, { flow_id: flowId, completed: true });
+                    setProgress((prev: any) => ({
+                      ...prev,
+                      prototype_progress: res.data.prototype_progress,
+                      prototype_completed: res.data.prototype_completed,
+                    }));
+                    if (res.data.first_completion && res.data.achievement) {
+                      setAchievement(res.data.achievement);
+                    }
+                    if (res.data.first_completion) {
+                      refreshUser();
+                    }
+                  } catch { message.error('Failed to save progress'); }
+                }}
+                allComplete={progress?.prototype_completed ?? false}
+                onProceed={proceedToQuiz}
+              />
+            )
+          )}
+
           {/* QUIZ STEP — one question at a time */}
-          {step === 1 && (() => {
+          {step === 2 && (() => {
             const quizzes = mod.quizzes || [];
             const total = quizzes.length;
             const q = quizzes[currentQuizIndex];
@@ -1937,7 +1482,7 @@ export default function ModuleDetail() {
           })()}
 
           {/* DONE STEP — Achievement Card */}
-          {step === 2 && (() => {
+          {step === 3 && (() => {
         const ach = achievement;
         const modulePoints = mod.points_reward || 50;
         const quizBonus = quizResult?.passed ? 20 : (ach?.quiz_bonus || 0);
@@ -1968,17 +1513,12 @@ export default function ModuleDetail() {
 
         const downloadCertificate = async () => {
           try {
-            message.loading({ content: 'Preparing certificate... this may take up to 20 seconds', key: 'cert-dl', duration: 0 });
+            message.loading({ content: 'Preparing certificate...', key: 'cert-dl' });
             const safeName = (user?.name || 'User').replace(/[^a-zA-Z0-9-]/g, '-');
-            // Pass module_id so the user gets the cert for the module they JUST completed,
-            // not a random other one by FIELD priority.
-            await downloadPdf(`/certificate/download?module_id=${mod.id}`, `eWards-${mod.title?.replace(/[^a-zA-Z0-9-]/g, '-') || 'Module'}-${safeName}.pdf`);
+            await downloadPdf('/certificate/download', `eWards-Certificate-${safeName}.pdf`);
             message.success({ content: 'Certificate downloaded!', key: 'cert-dl', duration: 3 });
           } catch (e: any) {
-            // Surface the actual server reason (e.g. "Certificate for this module has not been issued yet")
-            let reason = e?.message || 'Unknown error';
-            if (e?.serverMessage) reason = e.serverMessage;
-            message.error({ content: 'Failed to download certificate: ' + reason, key: 'cert-dl', duration: 6 });
+            message.error({ content: 'Failed to download certificate: ' + (e.message || ''), key: 'cert-dl' });
           }
         };
 
@@ -2036,21 +1576,7 @@ export default function ModuleDetail() {
                     key: 'linkedin',
                     icon: <LinkedinOutlined style={{ color: '#0077B5' }} />,
                     label: 'Share on LinkedIn',
-                    onClick: () => {
-                      const liText = [
-                        `🏆 Just earned my ${mod.title} certificate on eWards Learning Hub!`,
-                        ``,
-                        `📊 Quiz score: ${qScore}%`,
-                        `⭐ Points earned: +${totalEarned} pts`,
-                        ``,
-                        `${shareText}`,
-                        ``,
-                        `#eWards #LearningAndDevelopment #Certified #ProductTraining`,
-                      ].join('\n');
-                      // LinkedIn doesn't accept text via URL params or Web Share API on desktop.
-                      // Always use the in-app modal: user copies the pre-written post, then pastes in LinkedIn.
-                      setShareModal({ open: true, text: liText });
-                    },
+                    onClick: () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(shareText)}`, '_blank'),
                   },
                   {
                     key: 'twitter',
@@ -2324,86 +1850,6 @@ export default function ModuleDetail() {
           onClose={() => setAssistantOpen(false)}
           status={assistantStatus}
         />
-
-        {/* ── LinkedIn Share Modal ── */}
-        <Modal
-          open={shareModal.open}
-          onCancel={() => setShareModal(s => ({ ...s, open: false }))}
-          footer={null}
-          width={520}
-          centered
-          styles={{ body: { padding: 0 } }}
-          afterOpenChange={(open) => {
-            if (open && shareModal.text) {
-              navigator.clipboard.writeText(shareModal.text).catch(() => {});
-            }
-          }}
-        >
-          <div style={{
-            background: 'linear-gradient(135deg, #0077B5, #0a66c2)',
-            padding: '18px 24px',
-            borderRadius: '8px 8px 0 0',
-            display: 'flex', alignItems: 'center', gap: 10,
-          }}>
-            <LinkedinOutlined style={{ fontSize: 22, color: '#fff' }} />
-            <div>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>Share on LinkedIn</div>
-              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>Post text is ready — just open LinkedIn and paste</div>
-            </div>
-          </div>
-
-          {/* Step guide */}
-          <div style={{ background: '#f0f7ff', borderBottom: '1px solid #d9e8f5', padding: '10px 24px', display: 'flex', gap: 20 }}>
-            {[['1', 'Copy text (done ✓)', '#0a66c2'], ['2', 'Click Open LinkedIn', '#0a66c2'], ['3', 'Paste (Ctrl+V)', '#0a66c2']].map(([n, label, color]) => (
-              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#444' }}>
-                <div style={{ width: 20, height: 20, borderRadius: '50%', background: color, color: '#fff', fontWeight: 700, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</div>
-                {label}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ padding: '16px 24px 8px' }}>
-            <Input.TextArea
-              value={shareModal.text}
-              onChange={e => setShareModal(s => ({ ...s, text: e.target.value }))}
-              rows={9}
-              style={{
-                fontFamily: 'inherit', fontSize: 13, lineHeight: 1.7,
-                borderRadius: 10, border: '1.5px solid #d9e8f5',
-                background: '#f8fbff', resize: 'vertical',
-              }}
-            />
-            <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Edit before posting if you like ✏️</div>
-          </div>
-
-          <div style={{ padding: '8px 24px 20px', display: 'flex', gap: 10 }}>
-            <Button
-              icon={<CopyOutlined />}
-              size="large"
-              style={{ flex: 1, borderRadius: 10, fontWeight: 600, borderColor: '#0a66c2', color: '#0a66c2' }}
-              onClick={() => {
-                navigator.clipboard.writeText(shareModal.text);
-                message.success({ content: '✅ Copied to clipboard!', duration: 3 });
-              }}
-            >
-              Copy Again
-            </Button>
-            <Button
-              type="primary"
-              icon={<LinkedinOutlined />}
-              size="large"
-              style={{ flex: 2, borderRadius: 10, fontWeight: 700, background: '#0a66c2', borderColor: '#0a66c2' }}
-              onClick={() => {
-                navigator.clipboard.writeText(shareModal.text).catch(() => {});
-                window.open('https://www.linkedin.com/feed/?shareActive=true', '_blank');
-                setShareModal(s => ({ ...s, open: false }));
-                setTimeout(() => message.info({ content: '📋 Now paste with Ctrl+V in the LinkedIn post box!', duration: 6 }), 600);
-              }}
-            >
-              Open LinkedIn &amp; Paste
-            </Button>
-          </div>
-        </Modal>
       </>
 
     </div>

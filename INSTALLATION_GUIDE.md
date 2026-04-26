@@ -161,47 +161,13 @@ npm run build
 ```
 
 ### 4. Queue Worker (for background jobs)
-
-The queue handles two job types: certificate PDF generation and Ask Ela AI indexing.
-Without a running worker, these will silently stall.
-
 ```bash
 # Update .env
 QUEUE_CONNECTION=database
 
-# Run migrations to create the jobs table (if not already done)
-php artisan queue:table
-php artisan migrate
-
-# Start the worker — keep this process running in the background
-php artisan queue:work --queue=default --tries=3 --timeout=60
+# Run the worker
+php artisan queue:work --daemon
 ```
-
-For production, use a process manager (Supervisor, systemd, or Render's background worker):
-
-```ini
-# Supervisor example (/etc/supervisor/conf.d/ewards-worker.conf)
-[program:ewards-worker]
-command=php /path/to/artisan queue:work --queue=default --tries=3 --timeout=60
-autostart=true
-autorestart=true
-```
-
-### 5. Cloudinary (persistent file storage)
-
-Without Cloudinary, uploaded files are stored on local disk and will be lost on Render/serverless deploys.
-
-```env
-# Format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
-CLOUDINARY_URL=cloudinary://123456789:abcdefghij@mycloudname
-```
-
-Steps:
-1. Sign up at [cloudinary.com](https://cloudinary.com) (free tier: 25 GB)
-2. Dashboard → Settings → API Keys → copy the **API Environment Variable** (starts with `cloudinary://`)
-3. Paste into `.env` as `CLOUDINARY_URL`
-
-If `CLOUDINARY_URL` is empty, the app falls back to local disk storage — fine for development.
 
 ### 5. Recommended Server
 Use **Nginx + PHP-FPM** or **Apache + mod_php** instead of `php artisan serve` for production.

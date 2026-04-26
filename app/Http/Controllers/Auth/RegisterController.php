@@ -41,8 +41,6 @@ class RegisterController extends Controller
             'outlet_name_entered' => $validated['outlet_name_entered'] ?? null,
             'ewards_reference' => $validated['ewards_reference'] ?? null,
             'designation' => $validated['designation'] ?? null,
-            // Auto-approve: anyone can sign up and start learning immediately.
-            // Admin approval is not required for signup.
             'approved' => true,
         ]);
 

@@ -7,35 +7,17 @@ export default defineConfig({
         laravel({ input: ['resources/js/main.tsx'], refresh: true }),
         react(),
     ],
-    server: {
-        proxy: {
-            '/api': {
-                target: 'http://localhost:8000',
-                changeOrigin: true,
-            },
-        },
-    },
     resolve: { alias: { '@': '/resources/js' } },
+    server: {
+        host: '0.0.0.0',
+        port: 5173,
+        strictPort: true,
+        cors: true,
+        hmr: { host: 'localhost' },
+        origin: 'http://localhost:5173',
+    },
     build: {
         target: 'es2020',
         cssMinify: true,
-        chunkSizeWarningLimit: 1000,
-        rollupOptions: {
-            output: {
-                manualChunks(id) {
-                    if (id.includes('node_modules')) {
-                        if (id.includes('react-router-dom') || /[\\/]node_modules[\\/](react|react-dom)[\\/]/.test(id)) {
-                            return 'vendor-react';
-                        }
-                        if (id.includes('antd') || id.includes('@ant-design/icons')) {
-                            return 'vendor-antd';
-                        }
-                        if (id.includes('axios')) {
-                            return 'vendor-axios';
-                        }
-                    }
-                },
-            },
-        },
     },
 });

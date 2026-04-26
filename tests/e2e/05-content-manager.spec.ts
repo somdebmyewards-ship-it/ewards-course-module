@@ -11,12 +11,13 @@ test.describe('Content Manager', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/content-manager', { waitUntil: 'load', timeout: 30_000 });
-    await page.locator('.ant-table-row').first().waitFor({ timeout: DATA_TIMEOUT });
+    // ContentManager renders .ant-card (not table) — wait for first card
+    await page.locator('.ant-card').first().waitFor({ state: 'visible', timeout: DATA_TIMEOUT });
   });
 
   test('module list loads', async ({ page }) => {
     await expect(
-      page.locator('.ant-table-row').first()
+      page.locator('.ant-card').first()
     ).toBeVisible({ timeout: DATA_TIMEOUT });
   });
 

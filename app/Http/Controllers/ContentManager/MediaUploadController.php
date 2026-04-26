@@ -4,10 +4,9 @@ namespace App\Http\Controllers\ContentManager;
 
 use App\Http\Controllers\Controller;
 use App\Models\Media;
-use Cloudinary\Cloudinary;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Cloudinary\Cloudinary;
 
 class MediaUploadController extends Controller
 {
@@ -20,93 +19,30 @@ class MediaUploadController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|max:102400', // 100 MB max
+            'file' => 'required|file|max:102400', // 100MB max
         ]);
 
         $file     = $request->file('file');
         $mimeType = $file->getMimeType();
-        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: '');
 
-        // HTML prototypes MUST be served with Content-Type: text/html and from a
-        // same-origin host so relative paths work in the iframe. Cloudinary's
-        // raw resource type strips extensions and returns application/octet-stream,
-        // which makes the iframe appear blank. So we never send HTML to Cloudinary.
-        $isHtmlPrototype = in_array($extension, ['html', 'htm'], true)
-            || in_array($mimeType, ['text/html', 'application/xhtml+xml'], true);
-
-        $url  = null;
-        $disk = null;
-        $path = null;
-
-        // ── STEP 1: Cloudinary (preferred for production) — skipped for HTML ──
-        if (config('lms.cloudinary_url') && !$isHtmlPrototype) {
-            try {
-                $cloudinary   = new Cloudinary(config('lms.cloudinary_url'));
-                $resourceType = str_starts_with($mimeType, 'video/') ? 'video'
-                    : (str_starts_with($mimeType, 'image/') ? 'image' : 'auto');
-                $result = $cloudinary->uploadApi()->upload($file->getRealPath(), [
-                    'resource_type' => $resourceType,
-                    'folder'        => 'ewards-lms',
-                ]);
-                $url  = $result['secure_url'];
-                $disk = 'cloudinary';
-                $path = $result['public_id'];
-            } catch (\Throwable $e) {
-                Log::warning('Cloudinary upload failed, attempting local fallback.', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
-        // ── STEP 2: Filesystem fallback (S3 or local public) ──
-        if (!$url) {
-            $defaultDisk = config('filesystems.default', 'public');
-
-            // For HTML prototypes, force a filename with a .html extension so the
-            // static file server (nginx/apache/s3) serves it with text/html.
-            $storeName = null;
-            if ($isHtmlPrototype) {
-                $storeName = \Illuminate\Support\Str::random(40) . '.html';
-            }
-
-            try {
-                if ($defaultDisk === 's3') {
-                    $path = $storeName
-                        ? $file->storeAs('uploads', $storeName, ['disk' => 's3', 'ContentType' => 'text/html'])
-                        : $file->store('uploads', 's3');
-                    if (!$path) {
-                        throw new \RuntimeException('S3 store returned empty path.');
-                    }
-                    $url  = Storage::disk('s3')->url($path);
-                    $disk = 's3';
-                } else {
-                    $this->ensurePublicStorageLink();
-                    $path = $storeName
-                        ? $file->storeAs('uploads', $storeName, 'public')
-                        : $file->store('uploads', 'public');
-                    if (!$path) {
-                        throw new \RuntimeException('Local store returned empty path.');
-                    }
-                    if (!Storage::disk('public')->exists($path)) {
-                        throw new \RuntimeException('File reported as saved but not found on disk: ' . $path);
-                    }
-                    // Videos go through the Range-enabled streamer; everything else
-                    // can use the static /storage URL.
-                    $filename = basename($path);
-                    $url = str_starts_with($mimeType, 'video/')
-                        ? rtrim(config('app.url'), '/') . '/media/' . $filename
-                        : rtrim(config('app.url'), '/') . '/storage/' . $path;
-                    $disk = 'public';
-                }
-            } catch (\Throwable $e) {
-                Log::error('Media upload failed.', [
-                    'error' => $e->getMessage(),
-                    'disk'  => $defaultDisk,
-                ]);
-                return response()->json([
-                    'message' => 'Failed to save file: ' . $e->getMessage(),
-                ], 500);
-            }
+        // Upload to Cloudinary if configured
+        if (config('lms.cloudinary_url')) {
+            $cloudinary = new Cloudinary(config('lms.cloudinary_url'));
+            $resourceType = str_starts_with($mimeType, 'video/') ? 'video'
+                : (str_starts_with($mimeType, 'image/') ? 'image' : 'auto');
+            $result = $cloudinary->uploadApi()->upload($file->getRealPath(), [
+                'resource_type' => $resourceType,
+                'folder'        => 'ewards-lms',
+            ]);
+            $url  = $result['secure_url'];
+            $disk = 'cloudinary';
+            $path = $result['public_id'];
+        } else {
+            $disk = config('filesystems.default', 'public');
+            $path = $file->store('uploads', $disk);
+            $url  = $disk === 's3'
+                ? Storage::disk('s3')->url($path)
+                : rtrim(config('app.url'), '/') . '/storage/' . $path;
         }
 
         $media = Media::create([
@@ -134,23 +70,5 @@ class MediaUploadController extends Controller
         }
         $media->delete();
         return response()->json(['success' => true]);
-    }
-
-    private function ensurePublicStorageLink(): void
-    {
-        $link   = public_path('storage');
-        $target = storage_path('app/public');
-        if (file_exists($link)) {
-            return;
-        }
-        try {
-            if (function_exists('symlink')) {
-                @symlink($target, $link);
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Could not auto-create public/storage symlink.', [
-                'error' => $e->getMessage(),
-            ]);
-        }
     }
 }

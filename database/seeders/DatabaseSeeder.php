@@ -12,8 +12,6 @@ class DatabaseSeeder extends Seeder
             MerchantSeeder::class,
             UserSeeder::class,
             TrainingModuleSeeder::class,
-            PrototypeConfigSeeder::class,
-            BadgeSeeder::class,
         ]);
     }
 }

@@ -12,11 +12,11 @@ test.describe('Learning Hub', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/learning-hub', { waitUntil: 'load', timeout: 30_000 });
-    await page.locator('.ant-card').first().waitFor({ state: 'visible', timeout: MODULE_TIMEOUT });
+    await page.locator('.card-enter').first().waitFor({ state: 'visible', timeout: MODULE_TIMEOUT });
   });
 
   test('shows module list', async ({ page }) => {
-    await expect(page.locator('.ant-card').first()).toBeVisible({ timeout: MODULE_TIMEOUT });
+    await expect(page.locator('.card-enter').first()).toBeVisible({ timeout: MODULE_TIMEOUT });
   });
 
   test('search filters modules', async ({ page }) => {
@@ -34,10 +34,11 @@ test.describe('Module detail', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/learning-hub', { waitUntil: 'load', timeout: 30_000 });
-    await page.locator('.ant-card').first().waitFor({ state: 'visible', timeout: MODULE_TIMEOUT });
-    // Click Start/Continue button — card-level click hits the Col wrapper (no onClick)
+    await page.locator('.card-enter').first().waitFor({ state: 'visible', timeout: MODULE_TIMEOUT });
+    // Click any navigation button — Start (not started), Resume (in progress), Review (completed)
+    // Restart is intentionally excluded — it opens a confirmation modal, not the module page
     await page.locator(
-      'button:has-text("Start"), button:has-text("Continue"), button:has-text("Restart")'
+      'button:has-text("Start"), button:has-text("Resume"), button:has-text("Review")'
     ).first().click({ timeout: MODULE_TIMEOUT });
     await page.waitForURL(/learning-hub\/.+/, { timeout: 30_000 });
   });

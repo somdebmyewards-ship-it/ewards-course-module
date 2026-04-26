@@ -13,7 +13,7 @@ class ApprovalController extends Controller
     {
         $pending = User::where('approved', false)
             ->whereNull('rejection_reason')
-            ->select('id', 'name', 'email', 'role', 'mobile', 'merchant_name_entered', 'outlet_name_entered', 'designation', 'ewards_reference', 'created_at')
+            ->select('id', 'name', 'email', 'role', 'merchant_name_entered', 'outlet_name_entered', 'designation', 'created_at')
             ->orderBy('created_at', 'desc')
             ->get();
         return response()->json($pending);

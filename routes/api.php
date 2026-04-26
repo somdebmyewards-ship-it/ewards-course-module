@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
-use App\Http\Controllers\Auth\ProfileController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\ResetPasswordController;
 
 // Training controllers
 use App\Http\Controllers\Training\ModuleController;
@@ -19,10 +16,6 @@ use App\Http\Controllers\Training\CertificateController;
 use App\Http\Controllers\Training\FeedbackController;
 use App\Http\Controllers\Training\SectionViewController;
 use App\Http\Controllers\Training\ModuleRouteController;
-use App\Http\Controllers\Training\PointsController;
-use App\Http\Controllers\Training\LeaderboardController;
-use App\Http\Controllers\Training\BadgeController;
-use App\Http\Controllers\Training\StatsController;
 
 // Admin controllers
 use App\Http\Controllers\Admin\UserManagementController;
@@ -50,19 +43,16 @@ Route::get('health', fn () => response()->json(['status' => 'ok', 'ts' => now()-
 Route::prefix('auth')->group(function () {
     Route::post('register', [RegisterController::class, 'store']);
     Route::post('login', [LoginController::class, 'store']);
-    Route::post('forgot-password', [ForgotPasswordController::class, 'store']);
-    Route::post('reset-password', [ResetPasswordController::class, 'store']);
 });
 
 
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
-    // These two must work even before admin approval (logout + status check)
     Route::post('auth/logout', [LogoutController::class, 'destroy']);
     Route::get('me', [LoginController::class, 'me']);
 
-    // All remaining routes require the account to be approved by an admin
-    Route::middleware('approved')->group(function () {
+    // User routes
+    Route::group([], function () {
 
         // Training module routes
         Route::get('modules', [ModuleController::class, 'index']);
@@ -78,11 +68,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('progress/{moduleId}/prototype', [ProgressController::class, 'updatePrototype']);
         Route::post('progress/{moduleId}/resume', [ProgressController::class, 'saveResume']);
 
-        Route::get('profile', [ProfileController::class, 'show']);
-        Route::patch('profile', [ProfileController::class, 'update']);
-
         Route::get('takeaways', [ProgressController::class, 'takeaways']);
-        Route::get('points/ledger', [PointsController::class, 'ledger']);
 
         Route::get('bookmarks', [BookmarkController::class, 'index']);
         Route::post('bookmarks', [BookmarkController::class, 'store']);
@@ -98,11 +84,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('section-views', [SectionViewController::class, 'store']);
         Route::get('section-views', [SectionViewController::class, 'index']);
-
-        Route::get('leaderboard', [LeaderboardController::class, 'index']);
-        Route::get('me/stats', [StatsController::class, 'me']);
-        Route::get('badges/mine', [BadgeController::class, 'mine']);
-        Route::get('badges/user/{userId}', [BadgeController::class, 'forUser']);
         Route::get('module-route', [ModuleRouteController::class, 'lookup']);
 
         // G1: Global cross-module chatbot (Ela) — rate limited
@@ -138,6 +119,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('modules/{moduleId}/quiz', [QuizCrudController::class, 'store']);
             Route::put('quiz/{id}', [QuizCrudController::class, 'update']);
             Route::delete('quiz/{id}', [QuizCrudController::class, 'destroy']);
+            Route::put('modules/{moduleId}/quiz-metadata', [ModuleCrudController::class, 'updateQuizMetadata']);
 
             Route::post('upload', [MediaUploadController::class, 'store']);
             Route::post('upload-chunk', [ChunkUploadController::class, 'storeChunk']);

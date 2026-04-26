@@ -61,10 +61,10 @@ test.describe('Pending Approvals', () => {
   });
 
   test('pending approvals page loads', async ({ page }) => {
-    await expect(page).toHaveURL(/pending-approvals/);
+    await expect(page).toHaveURL(/pending-approvals/, { timeout: DATA_TIMEOUT });
     // Use .or() — mixing Playwright text= syntax with CSS in a single locator string is invalid
     await expect(
-      page.locator('table').or(page.locator('.ant-empty')).or(page.getByText('No pending'))
+      page.locator('table').or(page.locator('.ant-empty')).or(page.getByText('No pending')).first()
     ).toBeVisible({ timeout: DATA_TIMEOUT });
   });
 

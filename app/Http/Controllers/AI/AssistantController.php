@@ -96,9 +96,9 @@ class AssistantController extends Controller
         // 4b. Block abusive / inappropriate content
         if ($this->containsAbuse($question)) {
             return response()->json([
-                'answer'       => "Let's keep things respectful! 😊 I'm here to help you with this module's content. Please ask a learning-related question.",
+                'answer'       => "Let's keep it respectful! 🙏 I'm here to help you learn about this module. Try asking a question about the training content.",
                 'sources'      => [],
-                'answer_found' => false,
+                'answer_found' => true,
             ]);
         }
 
@@ -192,37 +192,6 @@ class AssistantController extends Controller
 
     // ── Helpers ──────────────────────────────────────────────────────
 
-    private function containsAbuse(string $input): bool
-    {
-        $abusivePatterns = [
-            '/\b(fuck|shit|bitch|asshole|bastard|cunt|damn\s+you|go\s+to\s+hell)\b/i',
-            '/\b(kill\s+you|hate\s+you|stupid\s+(bot|ai|assistant))\b/i',
-            '/\b(slur|nigger|faggot|retard)\b/i',
-        ];
-
-        foreach ($abusivePatterns as $pattern) {
-            if (preg_match($pattern, $input)) {
-                return true;
-            }
-        }
-
-        $injectionPatterns = [
-            '/ignore\s+(all\s+)?previous\s+instructions?/i',
-            '/you\s+are\s+now\s+/i',
-            '/act\s+as\s+(?!a\s+helpful)/i',
-            '/jailbreak/i',
-            '/disregard.{0,30}(system|instructions?)/i',
-        ];
-
-        foreach ($injectionPatterns as $pattern) {
-            if (preg_match($pattern, $input)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private function sanitise(string $input): string
     {
         $patterns = [
@@ -276,5 +245,33 @@ class AssistantController extends Controller
         if (!in_array($role, ['ADMIN', 'TRAINER'])) {
             abort(403, 'Unauthorised.');
         }
+    }
+
+    /**
+     * Check for profanity, abuse, or inappropriate content.
+     */
+    private function containsAbuse(string $question): bool
+    {
+        $q = strtolower($question);
+        $patterns = [
+            '/\b(fuck|f+u+c+k+|fck|fuk)\b/i',
+            '/\b(shit|sh+i+t+|sh1t)\b/i',
+            '/\b(ass+hole|bitch|b1tch|bastard|cunt|twat|wanker|prick)\b/i',
+            '/\b(idiot|stupid|dumb|moron|retard|loser|trash)\b/i',
+            '/\b(stfu|gtfo|wtf)\b/i',
+            '/\b(slut|whore|hoe|thot|nigga|nigger)\b/i',
+            '/\b(die|kill|murder|suicide|rape)\b/i',
+            '/\b(sex|porn|nude|naked|xxx|nsfw)\b/i',
+            '/\b(drug|cocaine|heroin|meth)\b/i',
+            '/\b(hack|exploit|phishing|bomb|weapon|terrorist)\b/i',
+            '/\b(you|u)\s+(suck|are\s+(stupid|dumb|useless|trash|terrible|pathetic))/i',
+            '/\b(go\s+to\s+hell|go\s+die|shut\s*up|piss\s+off)\b/i',
+            '/\b(hate\s+(you|u)|screw\s+(you|u)|damn\s+(you|u))\b/i',
+        ];
+
+        foreach ($patterns as $p) {
+            if (preg_match($p, $q)) return true;
+        }
+        return false;
     }
 }

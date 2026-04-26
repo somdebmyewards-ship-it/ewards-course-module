@@ -5,19 +5,6 @@ import { AppstoreOutlined, UnorderedListOutlined, SearchOutlined } from '@ant-de
 import api, { cachedGet } from '@/lib/api';
 import ModuleCard from '@/components/ModuleCard';
 
-interface Stats {
-  rank: number | null;
-  total_in_group: number;
-  current_level: string;
-  next_level: string | null;
-  points_needed: number;
-  level_pct: number;
-  new_modules: { id: number; title: string; slug: string; icon?: string; description?: string }[];
-  next_badge: { code: string; name: string; icon_emoji: string; description: string } | null;
-  leaderboard: { name: string; points: number; is_current_user: boolean }[];
-  my_row: { name: string; points: number; is_current_user: boolean } | null;
-}
-
 const isIconUrl = (icon?: string) => icon && (icon.startsWith('http') || icon.startsWith('/storage') || icon.startsWith('data:'));
 const ModuleIcon = ({ icon, size = 28 }: { icon?: string; size?: number }) =>
   isIconUrl(icon) ? <img src={icon} alt="" style={{ width: size, height: size, objectFit: 'cover', borderRadius: size > 30 ? 10 : 6 }} /> : <span style={{ fontSize: size }}>{icon || '📚'}</span>;
@@ -25,7 +12,6 @@ const ModuleIcon = ({ icon, size = 28 }: { icon?: string; size?: number }) =>
 export default function LearningHub() {
   const [modules, setModules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<Stats | null>(null);
   const [viewMode, setViewMode] = useState<string>(localStorage.getItem('hub_view') || 'grid');
   const [restartingId, setRestartingId] = useState<number | null>(null);
   const [confirmId, setConfirmId] = useState<number | null>(null);
@@ -38,7 +24,6 @@ export default function LearningHub() {
       if (r.data && Array.isArray(r.data.modules)) setModules(r.data.modules);
       else if (Array.isArray(r.data)) setModules(r.data);
     }).catch(() => {}).finally(() => setLoading(false));
-    api.get('/me/stats').then(r => setStats(r.data)).catch(() => {});
   }, []);
 
   const navigate = useNavigate();
@@ -162,7 +147,7 @@ export default function LearningHub() {
                 }}>🔄</div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: '#1a1a2e', marginBottom: 10 }}>Restart Module?</div>
                 <div style={{ fontSize: 13, color: '#8c8c8c', lineHeight: 1.7 }}>
-                  All progress for <strong style={{ color: '#1a1a2e' }}>{mod?.title}</strong> will be permanently reset — quiz scores, checklist, and help views. <strong style={{ color: '#ff4d4f' }}>Points earned on this module will not be re-awarded.</strong>
+                  All progress for <strong style={{ color: '#1a1a2e' }}>{mod?.title}</strong> will be permanently reset, including your quiz scores and certificate.
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
@@ -204,9 +189,7 @@ export default function LearningHub() {
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>
               {completedCount === modules.length && modules.length > 0
                 ? "You've mastered every module."
-                : inProgressCount === 0 && completedCount === 0
-                  ? '👋 Welcome! Pick a module below to begin your learning journey.'
-                  : `${modules.length - completedCount} remaining · Complete all to earn your certificate`}
+                : `${modules.length - completedCount} remaining · Complete all to earn your certificate`}
             </div>
           </div>
 
@@ -222,241 +205,6 @@ export default function LearningHub() {
           </div>
         </div>
       </div>
-
-      {/* ── NEW LAUNCH BANNER ── */}
-      {stats?.new_modules && stats.new_modules.length > 0 && (
-        <div style={{
-          background: 'linear-gradient(135deg, #0a2540 0%, #1a3a5c 50%, #0d3366 100%)',
-          borderRadius: 16, padding: '14px 20px', marginBottom: 16,
-          display: 'flex', alignItems: 'center', gap: 14,
-          boxShadow: '0 4px 20px rgba(10,37,64,0.25)',
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #FFB800, #FF8C00)',
-            borderRadius: 8, padding: '4px 10px',
-            fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: 0.5,
-            whiteSpace: 'nowrap', flexShrink: 0,
-            boxShadow: '0 2px 8px rgba(255,140,0,0.4)',
-          }}>🆕 NEW LAUNCH</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
-              {stats.new_modules.length === 1 ? 'New module just published!' : `${stats.new_modules.length} new modules just published!`}
-            </div>
-            <div className="hide-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
-              {stats.new_modules.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => navigate(`/learning-hub/${m.slug}`)}
-                  style={{
-                    background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: 8, padding: '5px 12px', fontSize: 12, color: '#fff',
-                    cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap',
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.22)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)'; }}
-                >
-                  {m.icon && !m.icon.startsWith('http') && !m.icon.startsWith('/') ? m.icon + ' ' : ''}{m.title}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── STATS ROW: Rank | Level Progress | Next Badge ── */}
-      {stats && (
-        <div style={{ display: 'flex', gap: 14, marginBottom: 18, flexWrap: 'wrap' }}>
-
-          {/* Rank + mini leaderboard */}
-          <div style={{
-            flex: '1 1 220px', background: '#fff', borderRadius: 16,
-            padding: '16px 18px', border: '1px solid #f0e8ff',
-            boxShadow: '0 2px 14px rgba(107,47,160,0.07)',
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#9B59B6', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-              📊 Your Ranking
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginBottom: 12 }}>
-              <span style={{ fontSize: 32, fontWeight: 900, color: '#1a1a2e', lineHeight: 1 }}>
-                #{stats.rank ?? '—'}
-              </span>
-              {stats.total_in_group > 0 && (
-                <span style={{ fontSize: 12, color: '#8c8c8c', paddingBottom: 4 }}>
-                  of {stats.total_in_group}
-                </span>
-              )}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {stats.leaderboard.slice(0, 3).map((row, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '5px 8px', borderRadius: 8,
-                  background: row.is_current_user ? 'linear-gradient(90deg, #f3ebfc, #faf5ff)' : 'transparent',
-                  border: row.is_current_user ? '1px solid #c7a8e8' : '1px solid transparent',
-                }}>
-                  <span style={{ fontSize: 13, width: 20, textAlign: 'center' }}>
-                    {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}
-                  </span>
-                  <span style={{ fontSize: 12, flex: 1, fontWeight: row.is_current_user ? 700 : 500, color: row.is_current_user ? '#6B2FA0' : '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {row.is_current_user ? 'You ✦' : row.name}
-                  </span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#9B59B6', flexShrink: 0 }}>{row.points} pts</span>
-                </div>
-              ))}
-              {stats.my_row && (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 8px' }}>
-                    <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
-                    <span style={{ fontSize: 10, color: '#bbb' }}>···</span>
-                    <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
-                  </div>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '5px 8px', borderRadius: 8,
-                    background: 'linear-gradient(90deg, #f3ebfc, #faf5ff)',
-                    border: '1px solid #c7a8e8',
-                  }}>
-                    <span style={{ fontSize: 12, width: 20, textAlign: 'center', fontWeight: 700, color: '#6B2FA0' }}>#{stats.rank}</span>
-                    <span style={{ fontSize: 12, flex: 1, fontWeight: 700, color: '#6B2FA0' }}>You ✦</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#9B59B6', flexShrink: 0 }}>{stats.my_row.points} pts</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Level progress */}
-          <div style={{
-            flex: '1 1 200px', background: '#fff', borderRadius: 16,
-            padding: '16px 18px', border: '1px solid #f0e8ff',
-            boxShadow: '0 2px 14px rgba(107,47,160,0.07)',
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-          }}>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#9B59B6', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                ⚡ Level Progress
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <span style={{ fontSize: 16, fontWeight: 800, color: '#1a1a2e' }}>{stats.current_level}</span>
-                {stats.next_level && (
-                  <span style={{ fontSize: 12, color: '#9B59B6', fontWeight: 600 }}>→ {stats.next_level}</span>
-                )}
-              </div>
-              <div style={{ height: 8, background: '#f0e8ff', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
-                <div style={{
-                  height: '100%', width: `${stats.level_pct}%`,
-                  background: 'linear-gradient(90deg, #4a1080, #7B35B8)',
-                  borderRadius: 4, transition: 'width 0.8s ease',
-                }} />
-              </div>
-              <div style={{ fontSize: 11, color: '#aaa' }}>
-                {stats.next_level
-                  ? `${stats.points_needed} pts to reach ${stats.next_level}`
-                  : '🎉 Max level reached!'}
-              </div>
-            </div>
-            <div style={{
-              marginTop: 16, padding: '10px 12px', borderRadius: 10,
-              background: 'linear-gradient(135deg, #f3ebfc, #faf5ff)',
-              border: '1px solid #e0d0f5',
-            }}>
-              <div style={{ fontSize: 10, color: '#9B59B6', fontWeight: 600, marginBottom: 3 }}>LEVELS</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#595959' }}>
-                {['Beginner', 'Practitioner', 'Specialist', 'Expert'].map((lvl, i) => (
-                  <React.Fragment key={lvl}>
-                    <span style={{
-                      fontWeight: lvl === stats.current_level ? 800 : 500,
-                      color: lvl === stats.current_level ? '#6B2FA0' : '#aaa',
-                      fontSize: lvl === stats.current_level ? 11 : 10,
-                    }}>{lvl}</span>
-                    {i < 3 && <span style={{ color: '#ddd' }}>›</span>}
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Next badge */}
-          <div style={{
-            flex: '1 1 200px', background: '#fff', borderRadius: 16,
-            padding: '16px 18px', border: '1px solid #f0e8ff',
-            boxShadow: '0 2px 14px rgba(107,47,160,0.07)',
-            display: 'flex', flexDirection: 'column',
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#9B59B6', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-              🏅 Next Badge
-            </div>
-            {stats.next_badge ? (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                  <div style={{
-                    width: 52, height: 52, borderRadius: 14, flexShrink: 0,
-                    background: 'linear-gradient(135deg, #f3ebfc, #e8d5ff)',
-                    border: '2px solid #c7a8e8',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 26, filter: 'grayscale(0.2)',
-                  }}>{stats.next_badge.icon_emoji}</div>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: '#1a1a2e', marginBottom: 3 }}>
-                      {stats.next_badge.name}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#8c8c8c', lineHeight: 1.5 }}>
-                      {stats.next_badge.description}
-                    </div>
-                  </div>
-                </div>
-                <div style={{
-                  marginTop: 'auto', padding: '8px 12px', borderRadius: 10,
-                  background: 'linear-gradient(135deg, #fff8e7, #fff3d6)',
-                  border: '1px solid #ffe58f',
-                  fontSize: 11, color: '#875200', fontWeight: 600,
-                }}>
-                  ✨ Keep learning to unlock this badge
-                </div>
-              </>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>🏆</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>All Badges Earned!</div>
-                <div style={{ fontSize: 11, color: '#aaa' }}>You've unlocked every badge.</div>
-              </div>
-            )}
-          </div>
-
-        </div>
-      )}
-
-      {/* ── ONBOARDING NUDGE (first-time users, zero progress) ── */}
-      {!loading && modules.length > 0 && modules.every(m => !m.progress) && (
-        <div style={{
-          background: 'linear-gradient(135deg, #faf5ff 0%, #f0e8ff 100%)',
-          border: '1.5px solid #c7a8e8', borderRadius: 16,
-          padding: '18px 24px', marginBottom: 20,
-          display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap',
-        }}>
-          <div style={{ fontSize: 32 }}>👋</div>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#1a1a2e', marginBottom: 3 }}>
-              Welcome! Start with your first module.
-            </div>
-            <div style={{ fontSize: 12, color: '#595959', lineHeight: 1.6 }}>
-              Work through each module at your own pace — complete quizzes, earn points, and unlock your certificate.
-            </div>
-          </div>
-          <button
-            onClick={() => navigate(`/learning-hub/${modules[0].slug}`)}
-            style={{
-              background: '#6B2FA0', color: '#fff', border: 'none',
-              borderRadius: 10, padding: '10px 20px',
-              fontSize: 13, fontWeight: 700, cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Start Module 1 →
-          </button>
-        </div>
-      )}
 
       {/* ── CONTINUE LEARNING STRIP ── */}
       {inProgressModules.length > 0 && (
@@ -573,36 +321,17 @@ export default function LearningHub() {
             )}
           </div>
 
-          {/* Filter + Sort */}
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#888', whiteSpace: 'nowrap' }}>
-            Filter:
-            <select
-              aria-label="Filter modules"
-              className="sort-select"
-              value={filterTab}
-              onChange={e => setFilterTab(e.target.value)}
-            >
-              <option value="all">All ({modules.length})</option>
-              <option value="in_progress">In Progress ({inProgressCount})</option>
-              <option value="completed">Completed ({completedCount})</option>
-              <option value="not_started">Not Started ({notStartedCount})</option>
-            </select>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#888', whiteSpace: 'nowrap' }}>
-            Sort:
-            <select
-              aria-label="Sort modules"
-              className="sort-select"
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value)}
-            >
-              <option value="default">Default</option>
-              <option value="az">A → Z</option>
-              <option value="za">Z → A</option>
-              <option value="progress">By Progress</option>
-              <option value="status">By Status</option>
-            </select>
-          </label>
+          {/* Filter dropdown */}
+          <select
+            className="sort-select"
+            value={filterTab}
+            onChange={e => setFilterTab(e.target.value)}
+          >
+            <option value="all">All ({modules.length})</option>
+            <option value="in_progress">In Progress ({inProgressCount})</option>
+            <option value="completed">Completed ({completedCount})</option>
+            <option value="not_started">Not Started ({notStartedCount})</option>
+          </select>
         </div>
 
         {/* Sort + View toggle */}

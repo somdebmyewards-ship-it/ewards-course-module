@@ -9,16 +9,15 @@ const LOGO = 'https://ewardsdata.s3.ap-south-1.amazonaws.com/ewards_website/eWar
 
 export default function Register() {
   const [loading, setLoading] = useState(false);
-  const { register, login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
       await register(values);
-      await login(values.email, values.password);
-      message.success("You're in! Welcome to eWards Learning Hub.");
-      navigate('/learning-hub');
+      message.success('Account created! Please login to continue.');
+      navigate('/login');
     } catch (err: any) {
       message.error(err.response?.data?.message || 'Registration failed');
     }

@@ -42,7 +42,6 @@ class User extends Authenticatable
     public function quizAttempts() { return $this->hasMany(QuizAttempt::class); }
     public function feedback() { return $this->hasMany(ModuleFeedback::class); }
     public function aiChatLogs() { return $this->hasMany(ModuleAiChatLog::class); }
-    public function badges() { return $this->hasMany(\App\Models\UserBadge::class); }
 
     public function isAdmin(): bool { return $this->role === 'ADMIN'; }
     public function isTrainer(): bool { return $this->role === 'TRAINER'; }

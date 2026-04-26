@@ -14,12 +14,9 @@ class UserManagementController extends Controller
 {
     public function index()
     {
-        $users = User::withCount([
-            'progress as completed_modules_count' => fn ($q) => $q->where('module_completed', true),
-        ])->withCount(['badges as badge_count'])
-          ->with(['certificates', 'merchant:id,name', 'outlet:id,name'])
-          ->orderBy('created_at', 'desc')
-          ->get();
+        $users = User::withCount(['progress as completed_modules_count' => function ($q) {
+            $q->where('module_completed', true);
+        }])->with('certificates')->orderBy('created_at', 'desc')->get();
 
         $totalModules = TrainingModule::where('is_published', true)->count();
 
@@ -27,15 +24,12 @@ class UserManagementController extends Controller
             return [
                 'id' => $u->id, 'name' => $u->name, 'email' => $u->email,
                 'role' => $u->role, 'approved' => $u->approved,
-                'points' => $u->points,
-                'merchant_id' => $u->merchant_id, 'merchant_name' => $u->merchant?->name,
-                'outlet_id' => $u->outlet_id, 'outlet_name' => $u->outlet?->name,
-                'created_at' => $u->created_at,
+                'points' => $u->points, 'merchant_id' => $u->merchant_id,
+                'outlet_id' => $u->outlet_id, 'created_at' => $u->created_at,
                 'completed_modules' => $u->completed_modules_count,
                 'total_modules' => $totalModules,
                 'progress' => $totalModules > 0 ? round(($u->completed_modules_count / $totalModules) * 100) : 0,
                 'certified' => $u->certificates->isNotEmpty(),
-                'badge_count' => (int) $u->badge_count,
             ];
         }));
     }
@@ -51,9 +45,25 @@ class UserManagementController extends Controller
             'outlet_id' => 'nullable|exists:lms_outlets,id',
         ]);
 
-        // B5: Only existing ADMINs can create new ADMIN users
-        if ($validated['role'] === 'ADMIN' && !$request->user()->isAdmin()) {
-            return response()->json(['message' => 'Only admins can create admin users'], 403);
+        // B5: ADMIN role creation requires admin + password re-confirmation
+        if ($validated['role'] === 'ADMIN') {
+            if (!$request->user()->isAdmin()) {
+                return response()->json(['message' => 'Only admins can create admin users'], 403);
+            }
+
+            // Require password confirmation for elevated privilege action
+            $request->validate([
+                'confirm_password' => 'required|string',
+            ]);
+
+            if (!Hash::check($request->input('confirm_password'), $request->user()->password)) {
+                return response()->json(['message' => 'Password confirmation failed. Re-enter your password to create an ADMIN user.'], 403);
+            }
+
+            AuditLog::record('admin.create_attempt', $request->user()->id, 'user', null, [
+                'target_role' => 'ADMIN',
+                'target_email' => $validated['email'],
+            ]);
         }
 
         $user = User::create([

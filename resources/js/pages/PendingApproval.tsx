@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Result, Button, Alert, Spin } from 'antd';
 import { ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import api from '@/lib/api';
@@ -7,18 +7,12 @@ import api from '@/lib/api';
 export default function PendingApproval() {
   const [loading, setLoading] = useState(true);
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       api.get('/me')
         .then(r => {
-          if (r.data.approved) {
-            // Admin has already approved — send them to the app
-            navigate('/learning-hub', { replace: true });
-            return;
-          }
           if (r.data.rejection_reason) {
             setRejectionReason(r.data.rejection_reason);
           }

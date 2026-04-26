@@ -110,10 +110,9 @@ class ProgressController extends Controller
             );
 
             $this->updateProgressPercent($progress, $module);
-            $progress->refresh();
-            $achievement = $this->completion->checkAndComplete($progress);
+            $achievement = $this->completion->checkAndComplete($progress->fresh());
 
-            return ['progress' => $progress, 'achievement' => $achievement];
+            return ['progress' => $progress->fresh(), 'achievement' => $achievement];
         });
 
         return response()->json([
@@ -154,14 +153,13 @@ class ProgressController extends Controller
                 'checklist_completed_at' => $allChecked ? now() : null,
             ]);
 
-            $progress->refresh();
-            $this->updateProgressPercent($progress, $module);
-            $progress->refresh();
-            $achievement = $this->completion->checkAndComplete($progress);
+            $freshProgress = $progress->fresh();
+            $this->updateProgressPercent($freshProgress, $module);
+            $achievement = $this->completion->checkAndComplete($freshProgress->fresh());
 
             return [
                 'checklist_completed' => $allChecked,
-                'progress' => $progress,
+                'progress' => $freshProgress->fresh(),
                 'achievement' => $achievement,
             ];
         });
@@ -176,24 +174,9 @@ class ProgressController extends Controller
 
     public function reset(Request $request, int $moduleId)
     {
-        $userId = $request->user()->id;
-        $progress = TrainingProgress::where('user_id', $userId)->where('module_id', $moduleId)->first();
-
-        if ($progress) {
-            // D4: Reset all progress fields but preserve points_awarded so points cannot be re-earned on restart
-            $progress->update([
-                'help_viewed' => false, 'help_viewed_at' => null,
-                'checklist_state' => null, 'checklist_completed' => false, 'checklist_completed_at' => null,
-                'prototype_completed' => false, 'prototype_completed_at' => null, 'prototype_progress' => null,
-                'quiz_completed' => false, 'quiz_completed_at' => null, 'quiz_score' => null, 'quiz_answers' => null,
-                'module_completed' => false, 'module_completed_at' => null,
-                'last_section_id' => null,
-                // points_awarded intentionally preserved — restart cannot re-earn completion points
-            ]);
-        }
-
-        // Clear section views so required-section checks start fresh
-        SectionView::where('user_id', $userId)->where('module_id', $moduleId)->delete();
+        TrainingProgress::where('user_id', $request->user()->id)
+            ->where('module_id', $moduleId)
+            ->delete();
 
         return response()->json(['success' => true, 'message' => 'Progress reset']);
     }
@@ -281,16 +264,15 @@ class ProgressController extends Controller
                 PointsLedger::record($userId, $pointsReward, 'prototype_complete', $moduleId);
             }
 
-            $progress->refresh();
-            $this->updateProgressPercent($progress, $module);
-            $progress->refresh();
-            $achievement = $this->completion->checkAndComplete($progress);
+            $freshProgress = $progress->fresh();
+            $this->updateProgressPercent($freshProgress, $module);
+            $achievement = $this->completion->checkAndComplete($freshProgress->fresh());
 
             return [
                 'prototype_progress' => $prototypeProgress,
                 'prototype_completed' => $allDone,
                 'first_completion' => $firstCompletion,
-                'progress' => $progress,
+                'progress' => $freshProgress->fresh(),
                 'achievement' => $achievement,
             ];
         });

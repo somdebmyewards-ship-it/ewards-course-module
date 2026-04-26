@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Training;
 
 use App\Http\Controllers\Controller;
 use App\Models\ModuleFeedback;
-use App\Services\BadgeService;
 use Illuminate\Http\Request;
 
 class FeedbackController extends Controller
@@ -17,19 +16,14 @@ class FeedbackController extends Controller
             'improvement_suggestion' => 'nullable|string|max:1000',
         ]);
 
-        $userId = $request->user()->id;
-
         $feedback = ModuleFeedback::updateOrCreate(
-            ['user_id' => $userId, 'module_id' => $moduleId],
+            ['user_id' => $request->user()->id, 'module_id' => $moduleId],
             [
                 'rating' => $request->rating,
                 'comment' => $request->comment,
                 'improvement_suggestion' => $request->improvement_suggestion,
             ]
         );
-
-        $totalFeedback = ModuleFeedback::where('user_id', $userId)->count();
-        app(BadgeService::class)->onFeedbackSubmitted($userId, $totalFeedback);
 
         return response()->json(['message' => 'Feedback submitted', 'feedback' => $feedback]);
     }

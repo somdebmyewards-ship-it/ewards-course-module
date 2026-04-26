@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Training;
 
 use App\Http\Controllers\Controller;
 use App\Models\SectionView;
-use App\Services\BadgeService;
 use Illuminate\Http\Request;
 
 class SectionViewController extends Controller
@@ -16,14 +15,10 @@ class SectionViewController extends Controller
             'section_id' => 'required|exists:lms_sections,id',
         ]);
 
-        $userId = auth()->id();
-
         SectionView::updateOrCreate(
-            ['user_id' => $userId, 'section_id' => $validated['section_id']],
+            ['user_id' => auth()->id(), 'section_id' => $validated['section_id']],
             ['module_id' => $validated['module_id'], 'viewed_at' => now()]
         );
-
-        app(BadgeService::class)->onSectionViewed($userId);
 
         return response()->json(['message' => 'Section view recorded']);
     }

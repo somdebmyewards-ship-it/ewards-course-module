@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tooltip } from 'antd';
-import BadgeShelf from '@/components/BadgeShelf';
-import LeaderboardCard from '@/components/LeaderboardCard';
 import {
   TrophyOutlined, LockOutlined, StarFilled, ThunderboltOutlined,
   CrownOutlined, RiseOutlined, CheckCircleOutlined, SafetyCertificateOutlined,
@@ -34,17 +32,9 @@ function LevelIcon({ lk, size = 22 }: { lk: string; size?: number }) {
   return <StarFilled style={s} />;
 }
 
-const REASON_LABELS: Record<string, string> = {
-  module_complete: 'Module completed',
-  quiz_bonus:      'Quiz bonus',
-  quiz_pass:       'Quiz passed',
-  welcome:         'Welcome bonus',
-};
-
 export default function MyProgress() {
   const [modules, setModules]     = useState<any[]>([]);
   const [bookmarks, setBookmarks] = useState<any[]>([]);
-  const [ledger, setLedger]       = useState<any[]>([]);
   const [loading, setLoading]     = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -53,11 +43,9 @@ export default function MyProgress() {
     Promise.all([
       api.get('/modules'),
       api.get('/bookmarks').catch(() => ({ data: [] })),
-      api.get('/points/ledger').catch(() => ({ data: [] })),
-    ]).then(([modRes, bkRes, ldgRes]) => {
+    ]).then(([modRes, bkRes]) => {
       setModules(Array.isArray(modRes.data) ? modRes.data : (modRes.data?.modules ?? []));
       setBookmarks(Array.isArray(bkRes.data) ? bkRes.data : []);
-      setLedger(Array.isArray(ldgRes.data) ? ldgRes.data : []);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
@@ -493,62 +481,6 @@ export default function MyProgress() {
             </>
           )}
         </div>
-      </div>
-
-      {/* Points Ledger */}
-      <div style={{ marginTop: 24, background: '#fff', borderRadius: 18, padding: '24px 28px', boxShadow: '0 2px 12px rgba(107,47,160,0.07)', border: '1px solid #f0e8ff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-          <StarFilled style={{ fontSize: 18, color: '#9B59B6' }} />
-          <span style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e' }}>Points History</span>
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: '#aaa' }}>{ledger.length} transaction{ledger.length !== 1 ? 's' : ''}</span>
-        </div>
-
-        {ledger.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px 0', color: '#aaa', fontSize: 14 }}>
-            <StarFilled style={{ fontSize: 28, color: '#e0d0f7', display: 'block', marginBottom: 10 }} />
-            No points earned yet — complete a module to get started.
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {ledger.map((entry: any) => (
-              <div key={entry.id} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 16px', borderRadius: 12,
-                background: '#faf7ff', border: '1px solid #ede4ff',
-              }}>
-                <div style={{ fontSize: 22, width: 36, textAlign: 'center', flexShrink: 0 }}>
-                  {entry.module_icon || '⭐'}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {entry.module_title || (REASON_LABELS[entry.reason] ?? entry.reason)}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>
-                    {REASON_LABELS[entry.reason] ?? entry.reason} · {new Date(entry.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: 15, color: '#6B2FA0' }}>+{entry.points} pts</div>
-                  <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>Balance: {entry.balance_after}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Badges */}
-      <div style={{ marginTop: 24, background: '#fff', borderRadius: 18, padding: '24px 28px', boxShadow: '0 2px 12px rgba(107,47,160,0.07)', border: '1px solid #f0e8ff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-          <span style={{ fontSize: 20 }}>🏅</span>
-          <span style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e' }}>My Badges</span>
-        </div>
-        <BadgeShelf />
-      </div>
-
-      {/* Leaderboard */}
-      <div style={{ marginTop: 24 }}>
-        <LeaderboardCard />
       </div>
 
     </div>

@@ -1,11 +1,16 @@
 /**
  * Authentication flow — login, logout, protected routes, role gates.
+ *
+ * Tests 1-4 use login() helper (API call) to test the actual login flow.
+ * Tests 5-9 use storageState (pre-saved tokens) to avoid triggering
+ * background /me calls via login() — which causes PHP worker pile-up
+ * when php artisan serve only has 1 worker and TiDB cold-starts take 60s.
  */
 import { test, expect } from '@playwright/test';
 import { login, USERS } from './helpers';
 
-// TiDB Cloud /me API call takes ~4-5s on every page load — use 15s for post-navigation checks
-const NAV_TIMEOUT = 15_000;
+// TiDB Cloud /me API call on role-check can take 25-55s — allow generous headroom
+const NAV_TIMEOUT = 60_000;
 
 test.describe('Login page', () => {
   test('shows login form', async ({ page }) => {
@@ -35,37 +40,48 @@ test.describe('Login page', () => {
     await expect(page).toHaveURL(/learning-hub/);
   });
 
-  test('already logged-in user is redirected away from /login', async ({ page }) => {
-    await login(page, USERS.cashier);
-    await page.goto('/login');
-    // AuthContext makes /me API call (~4-5s on TiDB Cloud) before redirect fires
-    await expect(page).toHaveURL(/learning-hub/, { timeout: NAV_TIMEOUT });
-  });
-
   test('protected route redirects unauthenticated user to login', async ({ page }) => {
     await page.goto('/learning-hub');
-    await expect(page).toHaveURL(/login/);
+    // React /me API call (~4-5s on TiDB Cloud) fires before redirect; needs explicit timeout
+    await expect(page).toHaveURL(/login/, { timeout: 30_000 });
+  });
+});
+
+// Already-logged-in redirect — uses pre-saved storageState (no login API call at test time)
+// Avoids triggering another background /me that would block PHP worker for next suite.
+test.describe('Login redirect — already authenticated', () => {
+  test.use({ storageState: 'tests/e2e/.auth/cashier.json' });
+
+  test('already logged-in user is redirected away from /login', async ({ page }) => {
+    await page.goto('/login', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    // Cached user in localStorage → React immediately redirects (no /me needed)
+    await expect(page).toHaveURL(/learning-hub/, { timeout: NAV_TIMEOUT });
   });
 });
 
 test.describe('Role-based access', () => {
-  test('cashier cannot access /users (admin only)', async ({ page }) => {
-    await login(page, USERS.cashier);
-    await page.goto('/users');
-    // PrivateRoute waits for /me API call before evaluating role → 15s timeout
-    await expect(page).toHaveURL(/learning-hub/, { timeout: NAV_TIMEOUT });
+  test.describe('cashier role restrictions', () => {
+    test.use({ storageState: 'tests/e2e/.auth/cashier.json' });
+
+    test('cashier cannot access /users (admin only)', async ({ page }) => {
+      await page.goto('/users', { waitUntil: 'load', timeout: 30_000 });
+      // PrivateRoute evaluates role from cached user (no /me wait) before redirecting
+      await expect(page).toHaveURL(/learning-hub/, { timeout: NAV_TIMEOUT });
+    });
+
+    test('cashier cannot access /admin', async ({ page }) => {
+      await page.goto('/admin', { waitUntil: 'load', timeout: 30_000 });
+      await expect(page).toHaveURL(/learning-hub/, { timeout: NAV_TIMEOUT });
+    });
   });
 
-  test('cashier cannot access /admin', async ({ page }) => {
-    await login(page, USERS.cashier);
-    await page.goto('/admin');
-    await expect(page).toHaveURL(/learning-hub/, { timeout: NAV_TIMEOUT });
-  });
+  test.describe('admin role access', () => {
+    test.use({ storageState: 'tests/e2e/.auth/admin.json' });
 
-  test('admin can access /users', async ({ page }) => {
-    await login(page, USERS.admin);
-    await page.goto('/users');
-    await expect(page).toHaveURL(/users/);
-    await expect(page.locator('table')).toBeVisible({ timeout: 20_000 });
+    test('admin can access /users', async ({ page }) => {
+      await page.goto('/users', { waitUntil: 'load', timeout: 30_000 });
+      await expect(page).toHaveURL(/users/);
+      await expect(page.locator('table')).toBeVisible({ timeout: 20_000 });
+    });
   });
 });

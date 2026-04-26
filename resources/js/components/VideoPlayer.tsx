@@ -1,32 +1,19 @@
 import React from 'react';
 
-/** Detects YouTube/Vimeo/Drive/Loom URLs and renders iframe embed; falls back to <video> for direct files. */
+/** Detects YouTube/Vimeo/Drive/Loom URLs and renders iframe embed; falls back to <video> for direct files */
 const VideoPlayer = ({ url: rawUrl, style }: { url: string; style?: React.CSSProperties }) => {
   const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/api\/?$/, '');
-
-  // Normalize: resolve relative paths against apiBase, and rewrite legacy
-  // /storage/uploads/<file>.<ext> video URLs to the Range-enabled /media/<file>.<ext>
-  // streaming endpoint so existing DB rows keep working without a data migration.
-  let url = rawUrl;
-  if (url.startsWith('/storage/uploads/') && /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url)) {
-    const filename = url.replace(/^\/storage\/uploads\//, '');
-    url = `/media/${filename}`;
-  }
-  if (url.startsWith('/') && apiBase) {
-    url = `${apiBase}${url}`;
-  }
+  const url = rawUrl.startsWith('/storage/') && apiBase ? `${apiBase}${rawUrl}` : rawUrl;
 
   const iframeWrapper = (embedSrc: string) => (
-    <div style={{ width: '100%', maxWidth: 820, margin: '0 auto', background: '#000', ...style }}>
-      <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-        <iframe
-          src={embedSrc}
-          title="Video"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-          allowFullScreen
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-        />
-      </div>
+    <div style={{ position: 'relative', paddingTop: '56.25%', ...style }}>
+      <iframe
+        src={embedSrc}
+        title="Video"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        allowFullScreen
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+      />
     </div>
   );
 
@@ -46,46 +33,24 @@ const VideoPlayer = ({ url: rawUrl, style }: { url: string; style?: React.CSSPro
     return iframeWrapper(url);
   }
 
-  const isDirectVideo = /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url) || url.includes('/media/');
+  const isDirectVideo = /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url);
   if (isDirectVideo) {
-    // Compact 16:9 player:
-    //  - outer wrapper centers & caps width so the video never dominates the
-    //    page on wide columns (max 820px wide → max ~461px tall).
-    //  - inner wrapper is the 16:9 aspect-ratio box (padding-top trick works
-    //    everywhere, including older browsers).
-    //  - `object-fit: contain` preserves the source's native aspect ratio
-    //    (letterboxing if not 16:9), so nothing is ever cropped.
     return (
-      <div style={{ width: '100%', maxWidth: 820, margin: '0 auto', background: '#000', ...style }}>
-        <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-          <video
-            controls
-            preload="metadata"
-            playsInline
-            src={url}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              background: '#000',
-              display: 'block',
-            }}
-            onError={(e) => {
-              const parent = (e.target as HTMLElement).parentElement;
-              if (parent) {
-                parent.innerHTML = '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#999;background:#1a1a1a;padding:40px;text-align:center">'
-                  + '<div style="font-size:48px;margin-bottom:12px">&#9658;</div>'
-                  + '<div style="font-size:14px">Video unavailable — file may have been removed after deploy.</div>'
-                  + '<div style="font-size:12px;margin-top:8px;color:#666">Re-upload the video or use a YouTube/Google Drive link in Content Manager.</div>'
-                  + '</div>';
-              }
-            }}
-          />
-        </div>
-      </div>
+      <video
+        controls
+        style={{ width: '100%', maxHeight: '70vh', display: 'block', aspectRatio: '16 / 9', objectFit: 'contain', background: '#000' }}
+        src={url}
+        onError={(e) => {
+          const parent = (e.target as HTMLElement).parentElement;
+          if (parent) {
+            parent.innerHTML = '<div style="padding:40px;text-align:center;color:#999;background:#1a1a1a">'
+              + '<div style="font-size:48px;margin-bottom:12px">&#9658;</div>'
+              + '<div style="font-size:14px">Video unavailable — file may have been removed after deploy.</div>'
+              + '<div style="font-size:12px;margin-top:8px;color:#666">Re-upload the video or use a YouTube/Google Drive link in Content Manager.</div>'
+              + '</div>';
+          }
+        }}
+      />
     );
   }
 

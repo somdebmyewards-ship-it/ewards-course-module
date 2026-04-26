@@ -34,8 +34,6 @@ class ModuleController extends Controller
                     'help_viewed' => $p->help_viewed,
                     'checklist_state' => $p->checklist_state ?? [],
                     'checklist_completed' => $p->checklist_completed,
-                    'prototype_completed' => $p->prototype_completed,
-                    'prototype_progress' => $p->prototype_progress ?? [],
                     'quiz_completed' => $p->quiz_completed,
                     'quiz_score' => $p->quiz_score,
                     'module_completed' => $p->module_completed,
@@ -86,15 +84,10 @@ class ModuleController extends Controller
             'help_viewed' => $progress->help_viewed,
             'checklist_state' => $progress->checklist_state ?? [],
             'checklist_completed' => $progress->checklist_completed,
-            'prototype_completed' => $progress->prototype_completed,
-            'prototype_progress' => $progress->prototype_progress ?? [],
             'quiz_completed' => $progress->quiz_completed,
             'quiz_score' => $progress->quiz_score,
             'module_completed' => $progress->module_completed,
             'last_section_id' => $progress->last_section_id,
-            'viewed_section_ids' => SectionView::where('user_id', $user->id)
-                ->where('module_id', $module->id)
-                ->pluck('section_id'),
         ] : null;
 
         // Bundle bookmarks, feedback, assistant status to avoid 4 separate API calls
@@ -108,14 +101,14 @@ class ModuleController extends Controller
             : null;
 
         $result['_assistant_status'] = null;
-        if ($userId) {
+        if ($userId && class_exists(\App\Models\ModuleAiConfig::class)) {
             try {
-                $aiConfig = \App\Models\ModuleAiSetting::where('module_id', $module->id)->first();
+                $aiConfig = \App\Models\ModuleAiConfig::where('module_id', $module->id)->first();
                 if ($aiConfig) {
                     $result['_assistant_status'] = [
-                        'enabled' => (bool) $aiConfig->assistant_enabled,
-                        'indexed' => (bool) $aiConfig->last_indexed_at,
-                        'status'  => $aiConfig->index_status,
+                        'enabled' => (bool) $aiConfig->enabled,
+                        'indexed' => (bool) $aiConfig->indexed_at,
+                        'chunk_count' => $aiConfig->chunk_count ?? 0,
                     ];
                 }
             } catch (\Exception $e) {}

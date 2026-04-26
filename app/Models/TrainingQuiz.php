@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TrainingQuiz extends Model
 {
-    use HasFactory;
     protected $table = 'lms_quizzes';
     protected $fillable = ['module_id', 'question', 'options', 'correct_answer', 'explanation', 'display_order'];
 

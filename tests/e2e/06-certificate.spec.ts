@@ -27,7 +27,8 @@ test.describe('Certificate page', () => {
 
   test('certificate page renders without crash', async ({ page }) => {
     await page.goto('/certificate', { waitUntil: 'load', timeout: 30_000 });
-    await page.waitForLoadState('networkidle', { timeout: 20_000 });
-    await expect(page.locator('body')).not.toContainText('500', { timeout: 8_000 });
+    // networkidle is unreliable against TiDB Cloud (open connections extend beyond 20s)
+    await expect(page.locator('body')).not.toContainText('500', { timeout: 30_000 });
+    await expect(page.locator('body')).not.toContainText('Uncaught', { timeout: 5_000 });
   });
 });
