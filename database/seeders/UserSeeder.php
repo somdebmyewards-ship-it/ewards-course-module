@@ -12,6 +12,10 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        if (User::where('email', 'admin@ewards.com')->exists()) {
+            return;
+        }
+
         $merchants = Merchant::all();
         $m1 = $merchants->where('name', 'Spice Garden Restaurant')->first();
         $m2 = $merchants->where('name', 'Urban Style Fashion')->first();

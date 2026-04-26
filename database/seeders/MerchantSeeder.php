@@ -10,6 +10,10 @@ class MerchantSeeder extends Seeder
 {
     public function run(): void
     {
+        if (Merchant::count() > 0) {
+            return;
+        }
+
         // Merchant 1 - Restaurant chain
         $m1 = Merchant::create(['name' => 'Spice Garden Restaurant']);
         Outlet::create(['merchant_id' => $m1->id, 'name' => 'Connaught Place']);

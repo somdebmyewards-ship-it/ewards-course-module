@@ -61,8 +61,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
 
-    // User routes
-    Route::group([], function () {
+    // User routes (approved accounts only)
+    Route::middleware('approved')->group(function () {
 
         // Training module routes
         Route::get('modules', [ModuleController::class, 'index']);
