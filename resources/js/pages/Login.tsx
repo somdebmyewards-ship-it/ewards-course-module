@@ -291,9 +291,9 @@ export default function Login() {
                   <div style={{ marginBottom: 24 }}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7 }}>
                       <FL>Password</FL>
-                      <a href="#" style={{ fontSize:12, color:'#7b2cbf', fontWeight:600, textDecoration:'none', letterSpacing:'-0.01em' }}>
+                      <Link to="/forgot-password" style={{ fontSize:12, color:'#7b2cbf', fontWeight:600, textDecoration:'none', letterSpacing:'-0.01em' }}>
                         Forgot password?
-                      </a>
+                      </Link>
                     </div>
                     <Form.Item
                       name="password"

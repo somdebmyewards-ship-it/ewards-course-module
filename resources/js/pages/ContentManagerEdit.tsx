@@ -48,7 +48,7 @@ export default function ContentManagerEdit() {
     setSaving(true);
     // Strip keys the backend doesn't accept and drop nulls for non-nullable columns
     const allowedKeys = [
-      'title', 'slug', 'description', 'icon', 'display_order', 'video_url',
+      'title', 'slug', 'description', 'icon', 'cover_image', 'display_order', 'video_url',
       'image_urls', 'document_urls', 'points_reward', 'estimated_minutes',
       'is_published', 'quiz_enabled', 'require_help_viewed', 'require_checklist',
       'require_quiz', 'certificate_enabled', 'page_route', 'prototype_url',
@@ -197,6 +197,31 @@ export default function ContentManagerEdit() {
   };
 
   const isIconUrl = (icon?: string) => icon && (icon.startsWith('http') || icon.startsWith('/storage') || icon.startsWith('data:'));
+
+  const handleCoverImageUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,.jpg,.jpeg,.png,.webp';
+    input.onchange = async (ev: any) => {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { message.error('Cover image must be under 5MB'); return; }
+      message.loading({ content: 'Uploading cover image…', key: 'cover-upload', duration: 0 });
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await api.post('/cm/upload', fd);
+        const url = res.data.url;
+        detailsForm.setFieldsValue({ cover_image: url });
+        await api.put(`/cm/modules/${id}`, { cover_image: url });
+        fetchModule();
+        message.success({ content: 'Cover image uploaded!', key: 'cover-upload' });
+      } catch {
+        message.error({ content: 'Cover image upload failed', key: 'cover-upload' });
+      }
+    };
+    input.click();
+  };
 
   const handleVideoUpload = () => {
     const input = document.createElement('input');
@@ -452,6 +477,22 @@ export default function ContentManagerEdit() {
                     <Form.Item name="description" label="Description" extra="Brief summary shown on the Learning Hub cards.">
                       <Input.TextArea rows={3} placeholder="What will learners gain from this module?" showCount maxLength={300} />
                     </Form.Item>
+
+                    <Form.Item name="cover_image" label="Cover Image" extra="Displayed on module cards. Recommended: 800×450px, under 5MB.">
+                      <Input
+                        placeholder="https://... or upload below"
+                        addonAfter={
+                          <Button type="text" icon={<UploadOutlined />} onClick={handleCoverImageUpload} style={{ border: 'none', padding: '0 4px' }}>
+                            Upload
+                          </Button>
+                        }
+                      />
+                    </Form.Item>
+                    {mod?.cover_image && (
+                      <div style={{ marginBottom: 16, textAlign: 'center' }}>
+                        <img src={mod.cover_image} alt="cover" style={{ maxWidth: '100%', maxHeight: 140, borderRadius: 8, border: '1px solid #e9d4ff', objectFit: 'cover' }} />
+                      </div>
+                    )}
 
                     <Divider><PlayCircleOutlined /> Introductory Video</Divider>
                     <Form.Item name="video_url" label="Video" extra="Paste a YouTube, Vimeo, or direct video URL. Or upload a file.">

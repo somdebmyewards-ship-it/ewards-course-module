@@ -16,7 +16,7 @@ export async function login(page: Page, user: { email: string; password: string 
   // Step 1: get token via API (bypasses UI form — reliable against slow remote DB)
   const res = await page.request.post('/api/v1/auth/login', {
     data: { email: user.email, password: user.password },
-    timeout: 30_000, // TiDB Cloud: up to 15s on cold connections
+    timeout: 60_000, // TiDB Cloud: up to 15s on cold; 60s gives headroom for server queue
   });
   const body = await res.json();
 
@@ -26,12 +26,21 @@ export async function login(page: Page, user: { email: string; password: string 
     localStorage.setItem('user', JSON.stringify(u));
   }, { t: body.token, u: body.user });
 
-  // Step 3: go to /login — AuthContext calls /me to validate token, then
-  // auto-redirects to /learning-hub once auth resolves (React Router, no page reload)
+  // Step 3: intercept /me response before goto so we can drain it afterward
+  // (PHP artisan serve has 1 worker — undrained /me blocks next test's API call)
+  const meResponse = page.waitForResponse(
+    r => r.url().endsWith('/api/v1/me'),
+    { timeout: 60_000 },
+  ).catch(() => {});
+
+  // Navigate to /login — AuthContext fires /me in background, then auto-redirects
   await page.goto('/login', { waitUntil: 'domcontentloaded', timeout: 30_000 });
 
-  // Step 4: wait for the redirect — happens after /me completes (4–5s TiDB latency)
+  // Step 4: redirect fires immediately (cached user in localStorage, loading=false)
   await page.waitForURL(/learning-hub/, { timeout: 45_000 });
+
+  // Drain /me so PHP worker is free before the next test makes its first API call
+  await meResponse;
 }
 
 /**
@@ -69,8 +78,6 @@ export async function logout(page: Page) {
 
 export async function seedViaArtisan(command: string): Promise<void> {
   const { execSync } = await import('child_process');
-  const cwd = process.cwd().includes('ewards-learning-hub')
-    ? process.cwd()
-    : '/Volumes/Abhishek SSD/ewards-learning-hub';
+  const cwd = process.cwd();
   execSync(`php artisan ${command}`, { cwd, stdio: 'inherit' });
 }

@@ -89,8 +89,8 @@ class LeaderboardService
     private function getLevel(int $points): string
     {
         if ($points >= 500) return 'Expert';
-        if ($points >= 200) return 'Specialist';
-        if ($points >= 75)  return 'Practitioner';
+        if ($points >= 250) return 'Specialist';
+        if ($points >= 100) return 'Practitioner';
         return 'Beginner';
     }
 }

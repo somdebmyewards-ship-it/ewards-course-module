@@ -135,7 +135,7 @@ export default function Users() {
           <Form.Item name="name" label="Name" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}><Input /></Form.Item>
           <Form.Item name="password" label="Password" rules={[{ required: true, min: 6 }]}><Input.Password /></Form.Item>
-          <Form.Item name="role" label="Role" initialValue="CASHIER"><Select options={[{ value: 'ADMIN', label: 'Admin' }, { value: 'TRAINER', label: 'Trainer' }, { value: 'CASHIER', label: 'Cashier' }, { value: 'CLIENT', label: 'Client' }, { value: 'USER', label: 'User' }]} /></Form.Item>
+          <Form.Item name="role" label="Role" initialValue="CASHIER"><Select options={[{ value: 'ADMIN', label: 'Admin' }, { value: 'TRAINER', label: 'Trainer' }, { value: 'CASHIER', label: 'Cashier' }, { value: 'CLIENT', label: 'Client' }]} /></Form.Item>
           <Button type="primary" htmlType="submit" block style={{ background: '#6B2FA0' }}>Create User</Button>
         </Form>
       </Modal>
@@ -143,7 +143,7 @@ export default function Users() {
       <Modal title="Edit User" open={editOpen} onCancel={() => setEditOpen(false)} footer={null} width={520}>
         <Form form={editForm} layout="vertical" onFinish={updateUser}>
           <Form.Item name="name" label="Name"><Input /></Form.Item>
-          <Form.Item name="role" label="Role"><Select options={[{ value: 'ADMIN', label: 'Admin' }, { value: 'TRAINER', label: 'Trainer' }, { value: 'CASHIER', label: 'Cashier' }, { value: 'CLIENT', label: 'Client' }, { value: 'USER', label: 'User' }]} /></Form.Item>
+          <Form.Item name="role" label="Role"><Select options={[{ value: 'ADMIN', label: 'Admin' }, { value: 'TRAINER', label: 'Trainer' }, { value: 'CASHIER', label: 'Cashier' }, { value: 'CLIENT', label: 'Client' }]} /></Form.Item>
           <Form.Item name="merchant_id" label="Merchant">
             <Select
               allowClear

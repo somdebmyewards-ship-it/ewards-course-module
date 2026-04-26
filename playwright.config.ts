@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   globalSetup: './tests/e2e/global-setup',
-  timeout: 180_000, // Module detail beforeEach: up to 120s wait + navigation on cold TiDB
+  timeout: 300_000, // Suite 03 beforeEach (120s cold-start) + test body; needs 300s total budget
   retries: 1,
   workers: 1, // TiDB Cloud remote DB — serialise tests to avoid connection contention
 

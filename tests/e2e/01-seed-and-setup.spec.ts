@@ -10,7 +10,7 @@
 import { test, expect } from '@playwright/test';
 import { execSync } from 'child_process';
 
-const APP_DIR = '/Volumes/Abhishek SSD/ewards-learning-hub';
+const APP_DIR = process.cwd();
 
 function artisan(cmd: string) {
   return execSync(`php artisan ${cmd}`, {

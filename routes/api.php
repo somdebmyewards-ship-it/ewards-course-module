@@ -7,6 +7,8 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\ProfileController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 
 // Training controllers
 use App\Http\Controllers\Training\ModuleController;
@@ -48,6 +50,8 @@ Route::get('health', fn () => response()->json(['status' => 'ok', 'ts' => now()-
 Route::prefix('auth')->group(function () {
     Route::post('register', [RegisterController::class, 'store']);
     Route::post('login', [LoginController::class, 'store']);
+    Route::post('forgot-password', [ForgotPasswordController::class, 'store']);
+    Route::post('reset-password', [ResetPasswordController::class, 'store']);
 });
 
 

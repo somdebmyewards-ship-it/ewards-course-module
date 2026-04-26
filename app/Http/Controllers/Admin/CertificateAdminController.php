@@ -48,9 +48,9 @@ class CertificateAdminController extends Controller
                 ]
             );
         } elseif ($certificateType === 'expert') {
-            // Expert certificate - 300+ points
-            if ($user->points < 300) {
-                return response()->json(['error' => 'User does not have 300+ points'], 422);
+            // Expert certificate - 500+ points (aligned with CompletionService D5 threshold)
+            if ($user->points < 500) {
+                return response()->json(['error' => 'User does not have 500+ points'], 422);
             }
 
             $cert = Certificate::updateOrCreate(

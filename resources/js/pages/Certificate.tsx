@@ -62,17 +62,17 @@ export default function CertificatePage() {
         download_url: pathCert?.id ? `/api/certificates/${pathCert.id}/download` : (allCompleted ? '/api/certificate/download' : undefined),
       });
 
-      // Expert certificate (300+ points)
-      const userPoints = modules.reduce((sum: number, m: any) => sum + (m.progress?.module_completed ? (m.points_reward || 0) : 0), 0);
+      // Expert certificate (500+ points) — use total_points from API, not local calculation
+      const actualPoints: number = certRes.data?.total_points ?? modules.reduce((sum: number, m: any) => sum + (m.progress?.module_completed ? (m.points_reward || 0) : 0), 0);
       const expertCert = earnedCerts.find((c: any) => (c.certificate_type ?? c.type) === 'expert');
       certs.push({
         id: expertCert?.id,
         type: 'expert',
         title: 'eWards Expert',
-        description: 'Earn 300+ points across all modules',
+        description: 'Earn 500+ points across all modules',
         issued_at: expertCert?.issued_at,
-        earned: userPoints >= 300,
-        download_url: expertCert?.id ? `/api/certificates/${expertCert.id}/download` : (userPoints >= 300 ? '/api/certificate/download?type=expert' : undefined),
+        earned: actualPoints >= 500,
+        download_url: expertCert?.id ? `/api/certificates/${expertCert.id}/download` : (actualPoints >= 500 ? '/api/certificate/download?type=expert' : undefined),
       });
 
       setCertificates(certs);
