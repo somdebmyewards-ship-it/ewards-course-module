@@ -23,3 +23,5 @@ yarn-error.log
 .vercel
 certs/
 /_nm_stubs/
+.DS_Store
+*.DS_Store
