@@ -1,7 +1,12 @@
 # eWards Learning Hub — Manual QA Guide
 
-**Version tested:** Session 9 (2026-04-25)
-**PHPUnit:** 84/84 ✅ | **Playwright:** 49/51 ✅ (2 flaky = TiDB cold-start only)
+**Version tested:** Session 10 (2026-04-27)
+**PHPUnit:** 84/84 ✅ | **Playwright:** 49/49 ✅ (2 flaky = TiDB cold-start only, pass on retry)
+
+> **Bugs fixed this session (2026-04-27):**
+> - `GET /api/v1/certificates` returned 500 instead of 401 for unauthenticated requests — fixed by adding `AuthenticationException` handler in `bootstrap/app.php` (Laravel was crashing on missing named `login` route)
+> - Seeder FK violation and duplicate-email error on re-deploy — fixed by adding idempotency guards in `MerchantSeeder` and `UserSeeder`
+> - Unapproved users could access `/api/v1/modules` (returned 200 instead of 403) — fixed by adding `approved` middleware to the learner routes group in `routes/api.php`
 
 ---
 

@@ -1,7 +1,7 @@
 # eWards Learning Hub — Deployment Guide
 
 **Stack:** Laravel 13 (Docker / Render) + React/Vite (Vercel) + TiDB Cloud (MySQL-compatible)
-**Last updated:** 2026-04-25 | Session 9
+**Last updated:** 2026-04-27 | Session 10
 
 ---
 
@@ -32,43 +32,47 @@ Browser
 3. Render auto-reads `render.yaml` from the `main` branch
 4. The service `ewards-learning-hub-api` is created automatically
 
-### 1.2 Environment variables to set manually in Render Dashboard
+### 1.2 Environment variables — what to set and what to leave alone
+
+#### Table A — Already handled by `render.yaml` (do NOT re-enter in the dashboard)
+
+`render.yaml` ships with explicit values for all of these. Entering them again in the dashboard creates duplicates that override the file.
+
+| Group | Keys set by render.yaml |
+|---|---|
+| App | `APP_NAME`, `APP_ENV`, `APP_KEY`*, `APP_DEBUG`, `APP_URL` (auto from service host), `LOG_CHANNEL`, `LOG_LEVEL` |
+| Database | `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `MYSQL_ATTR_SSL_CA`, `MYSQL_ATTR_SSL_VERIFY` |
+| Cache / Session | `CACHE_DRIVER`, `QUEUE_CONNECTION`, `SESSION_DRIVER`, `SESSION_LIFETIME`, `FILESYSTEM_DISK` |
+| Auth / CORS | `CORS_ALLOWED_ORIGINS`, `SANCTUM_TOKEN_EXPIRATION` |
+| Email | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_ENCRYPTION`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`, `ADMIN_NOTIFICATION_EMAIL` |
+| File storage | `CLOUDINARY_URL` |
+| AI services | `GROQ_CHAT_MODEL`, `LLM_BASE_URL`, `AI_CHUNK_SIZE`, `AI_CHUNK_OVERLAP`, `AI_MAX_CONTEXT_CHUNKS`, `AI_RATE_LIMIT_PER_MINUTE`, `AI_MIN_SIMILARITY_SCORE` |
+
+> *`APP_KEY` is hardcoded in `render.yaml` as a fixed base64 string — it is **not** auto-generated. Before going to production on AWS or any new environment, generate a fresh key with `php artisan key:generate --show` and update it.
+
+#### Table B — Must be set manually in Render Dashboard
+
+These 4 variables are **not** present as values in `render.yaml` and Render will not inject them automatically.
 
 > Go to: Service → Environment → Add Environment Variable
 
-These are **not** in `render.yaml` (secrets — never commit):
-
-| Key | Value | Notes |
+| Key | Where to get it | Notes |
 |---|---|---|
-| `DB_USERNAME` | `<TiDB username>` | TiDB Cloud → Connect → Username |
-| `DB_PASSWORD` | `<TiDB password>` | TiDB Cloud → Connect → Password |
-| `MAIL_MAILER` | `smtp` | |
-| `MAIL_HOST` | `smtp.gmail.com` | |
-| `MAIL_PORT` | `587` | |
-| `MAIL_USERNAME` | `your-gmail@gmail.com` | Must be the Gmail account |
-| `MAIL_PASSWORD` | `xxxx xxxx xxxx xxxx` | Gmail App Password (16 chars, spaces OK) — NOT your Gmail login password. Generate at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) |
-| `MAIL_ENCRYPTION` | `tls` | |
-| `MAIL_FROM_ADDRESS` | `your-gmail@gmail.com` | Same as MAIL_USERNAME |
-| `MAIL_FROM_NAME` | `eWards Learning Hub` | |
-| `ADMIN_NOTIFICATION_EMAIL` | `admin@ewards.in` | Receives new signup alerts |
-| `CLOUDINARY_URL` | `cloudinary://API_KEY:SECRET@cloud-name` | From Cloudinary Dashboard → API Keys |
-| `HUGGINGFACE_API_TOKEN` | `hf_xxxxxxxxxxxx` | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) — free |
-| `GROQ_API_KEY` | `gsk_xxxxxxxxxxxx` | [console.groq.com](https://console.groq.com) → API Keys — free |
-| `CERTIFICATE_COMPANY_NAME` | `eWards` | Appears on PDF certificates |
-| `CERTIFICATE_SIGNATORY` | `eWards Training Team` | Appears on PDF certificates |
+| `HUGGINGFACE_API_TOKEN` | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) — free tier | Powers embedding search in Ask Ela |
+| `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) → API Keys — free tier | Powers LLM responses in Ask Ela |
+| `CERTIFICATE_COMPANY_NAME` | Your value, e.g. `eWards` | Printed on every PDF certificate |
+| `CERTIFICATE_SIGNATORY` | Your value, e.g. `eWards Training Team` | Printed on every PDF certificate |
 
-> **Already set by render.yaml** (do not override unless changing):
-> `APP_NAME`, `APP_ENV=production`, `APP_DEBUG=false`, `APP_KEY` (auto-generated),
-> `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_CONNECTION`, `QUEUE_CONNECTION=sync`,
-> `CACHE_DRIVER=file`, `SESSION_DRIVER=file`, `CORS_ALLOWED_ORIGINS`
+> **If Ask Ela is not needed**, you can leave `HUGGINGFACE_API_TOKEN` and `GROQ_API_KEY` blank — all other features work without them.
 
 ### 1.3 What happens on first deploy
 
 The `docker-entrypoint.sh` runs automatically on every deploy:
-1. Clears and re-caches config, routes, views
+1. Clears and re-caches config, routes, views, events
 2. Runs `php artisan migrate --force` — applies any new migrations
 3. If the users table is empty → runs `php artisan db:seed --force` (creates admin account)
-4. Starts Laravel on `PORT` (Render sets this automatically)
+4. Runs `php artisan storage:link` — links `storage/app/public` to `public/storage` for local file access
+5. Starts Laravel on `PORT` (Render sets this automatically)
 
 > **Note:** The seed creates a default admin user. Check `database/seeders/DatabaseSeeder.php` for the credentials and **change the password immediately after first login**.
 
